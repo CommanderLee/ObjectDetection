@@ -4,7 +4,7 @@ clc;
 disp('======= KITTI Object Detection Regionlets =======');
 
 % options
-root_dir = '../../data_object_image';
+root_dir = '../../../../data_object_image';
 data_set = 'training';
 
 training_num = 10;
