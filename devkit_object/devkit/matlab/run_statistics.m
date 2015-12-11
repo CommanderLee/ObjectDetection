@@ -5,8 +5,8 @@ disp('Computing statistics of Cars, Pedestrians and Cyclists in training set.');
 disp('Please wait ...');
 
 % options
-root_dir = '/media/karlsruhe_data/kitti/2012_object';
-  
+%root_dir = '/media/karlsruhe_data/kitti/2012_object';
+root_dir = '../../../../data_object_image';  
 % get label directory and number of images
 label_dir = fullfile(root_dir,'training/label_2');
 nimages = length(dir(fullfile(label_dir, '*.txt')));
