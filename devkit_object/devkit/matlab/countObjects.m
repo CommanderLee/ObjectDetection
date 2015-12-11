@@ -20,6 +20,12 @@ for i=0:imageMaxNum
            vans = vans + 1;
        elseif strcmp(objects(o).type, 'Pedestrian')
            pedestrians = pedestrians + 1;
+           if round(objects(o).x2) - round(objects(o).x1) == 18 && round(objects(o).y2) - round(objects(o).y1) == 214
+               fprintf('215*19: %d-%d\n', i, o);
+           end
+           if round(objects(o).x2) - round(objects(o).x1) == 114 && round(objects(o).y2) - round(objects(o).y1) == 227
+               fprintf('228*115: %d-%d\n', i, o);
+           end 
        elseif strcmp(objects(o).type, 'Person_sitting')
            sitting = sitting + 1;
        end

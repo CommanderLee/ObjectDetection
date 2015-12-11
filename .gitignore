@@ -1,5 +1,6 @@
 /data_object_image_2
 /data_object_label_2
+/crop
 *.mat
 *.asv
 
