@@ -22,7 +22,7 @@ cnn = cnnsetup(cnn, train_x, train_y);
 
 opts.alpha = 1;
 opts.batchsize = 50;
-opts.numepochs = 5;
+opts.numepochs = 1;
 
 cnn = cnntrain(cnn, train_x, train_y, opts);
 
@@ -34,4 +34,6 @@ figure; plot(cnn.rL);
 fprintf('Epoch:%d, Error rate:%f\n', opts.numepochs, er);
 
 assert(er<0.12, 'Too big error');
+
+save('cnn.mat', 'cnn');
 end
