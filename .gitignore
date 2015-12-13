@@ -3,6 +3,8 @@
 /crop
 *.mat
 *.asv
+*.png
+*.mexw64
 
 # Windows image file caches
 Thumbs.db

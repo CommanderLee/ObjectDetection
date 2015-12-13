@@ -6,27 +6,52 @@ close all;
 %% Initialization
 carDir = 'crop/cars';
 carNum = length(dir(fullfile(carDir, '*.png')));
+
 pedDir = 'crop/pedestrian';
 pedNum = length(dir(fullfile(pedDir, '*.png')));
+pedDir1 = 'crop/pedestrian_1';
+pedNum1 = length(dir(fullfile(pedDir1, '*.png')));
+
 othDir = 'crop/others';
 othNum = length(dir(fullfile(othDir, '*.png')));
 
-fprintf('Found %d cars, %d pedestrians, and %d other things.\n', carNum, pedNum, othNum);
+fprintf('Found %d cars, %d pedestrians, and %d other things.\n', carNum, pedNum+pedNum1, othNum);
 
 %% Load images
 nSize = 64;
 
 carImg = zeros(nSize, nSize, carNum);
+counter = 0;
 for i = 1:carNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, i-1)));
-    carImg(:,:,i) = imresize(img, [nSize nSize]);
+    if size(img, 1) > 60
+        counter = counter + 1;
+        carImg(:,:,counter) = imresize(img, [nSize nSize]);
+    end
 end
+carNum = counter;
+carImg = carImg(:,:, 1:carNum);
+fprintf('    %d selected cars.\n', carNum);
 
-pedImg = zeros(nSize, nSize, pedNum);
+pedImg = zeros(nSize, nSize, pedNum+pedNum1);
+counter = 0;
 for i = 1:pedNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', pedDir, i-1)));
-    pedImg(:,:,i) = imresize(img, [nSize nSize]);
+    if size(img, 1) > 35
+        counter = counter + 1;
+        pedImg(:,:,counter) = imresize(img, [nSize nSize]);
+    end
 end
+for i = 1:pedNum1
+    img = rgb2gray(imread(sprintf('%s/%06d.png', pedDir1, i-1)));
+    if size(img, 1) > 35
+        counter = counter + 1;
+        pedImg(:,:,counter) = imresize(img, [nSize nSize]);
+    end
+end
+pedNum = counter;
+pedImg = pedImg(:,:, 1:pedNum);
+fprintf('    %d selected pedestrians.\n', pedNum);
 
 othImg = zeros(nSize, nSize, othNum);
 for i = 1:othNum
@@ -81,8 +106,8 @@ for k=1:K
     cnn = cnnsetup(cnn, trainX, trainY);
 
     opts.alpha = 1;
-    opts.batchsize = 50;
-    opts.numepochs = 1;
+    opts.batchsize = 30;
+    opts.numepochs = 5;
 
     cutNum = floor(size(trainX, 3) / opts.batchsize) * opts.batchsize;
     cnn = cnntrain(cnn, trainX(:,:,1:cutNum), trainY(:,1:cutNum), opts);
