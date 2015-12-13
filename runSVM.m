@@ -14,7 +14,7 @@ pedNum1 = length(dir(fullfile(pedDir1, '*.png')));
 
 fprintf('Found %d cars, %d pedestrians.\n', carNum, pedNum+pedNum1);
 
-%% Load images
+%% Load images. 35sec.
 nSize = 64;
 
 carImg = zeros(nSize, nSize, carNum);
@@ -22,7 +22,7 @@ counter = 0;
 tic;
 for i = 1:carNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, i-1)));
-    if size(img, 1) > 65
+    if size(img, 1) > 40
         counter = counter + 1;
         carImg(:,:,counter) = imresize(img, [nSize nSize]);
     end
@@ -52,7 +52,7 @@ pedImg = pedImg(:,:, 1:pedNum);
 fprintf('    %d selected pedestrians.\n', pedNum);
 fprintf('Load Images: %f seconds\n', toc);
 
-%% Extract HoG
+%% Extract HoG for training & testing set. 40 sec.
 tic;
 cellSize = [4 4];
 % img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, 0)));
@@ -65,24 +65,58 @@ img = carImg(:,:,1);
 % plot(hogVis);
 hogFeatureSize = length(hogFeature);
 
-trainFeatures = zeros(carNum+pedNum, hogFeatureSize, 'single');
-trainLabels = zeros(carNum+pedNum, 1, 'uint8');
-trainLabels(1:carNum, 1) = 1;
+rng(1);
+randCarIndex = randperm(carNum, pedNum);
+carNum = pedNum;
+% randCarIndex = randperm(carNum);
+randPedIndex = randperm(pedNum);
 
-for i=1:carNum
-    trainFeatures(i, :) = extractHOGFeatures(carImg(:,:,i), 'CellSize', cellSize);
+trainCarNum = round(carNum * 0.7);
+trainPedNum = round(pedNum * 0.7);
+fprintf('Train&Validate on %d/%d cars, %d/%d pedestrians.\n', ...
+    trainCarNum, carNum, trainPedNum, pedNum);
+
+trainNum = trainCarNum+trainPedNum;
+trainFeatures = zeros(trainNum, hogFeatureSize, 'single');
+trainLabels = zeros(trainNum, 1, 'uint8');
+trainLabels(1:trainCarNum, 1) = 1;
+
+testNum = carNum + pedNum - trainNum;
+testFeatures = zeros(testNum, hogFeatureSize, 'single');
+testLabels = zeros(testNum, 1, 'uint8');
+testLabels(1 : carNum-trainCarNum, 1) = 1;
+
+for i=1:trainCarNum
+    trainFeatures(i, :) = extractHOGFeatures(carImg(:,:,randCarIndex(i)), 'CellSize', cellSize);
+end
+for j=1:trainPedNum
+    i = j + trainCarNum;
+    trainFeatures(i, :) = extractHOGFeatures(pedImg(:,:,randPedIndex(j)), 'CellSize', cellSize);
 end
 
-for j=1:pedNum
-    i = j + carNum;
-    trainFeatures(i, :) = extractHOGFeatures(pedImg(:,:,j), 'CellSize', cellSize);
+for i=trainCarNum+1 : carNum
+    testFeatures(i - trainCarNum, :) = extractHOGFeatures(carImg(:,:,randCarIndex(i)), 'CellSize', cellSize);
 end
-
+dj = carNum - trainCarNum - trainPedNum;
+for j=trainPedNum+1 : pedNum
+    i = j + dj;
+    testFeatures(i, :) = extractHOGFeatures(pedImg(:,:,randPedIndex(j)), 'CellSize', cellSize);
+end
 fprintf('Extract HoG Features: %f seconds\n', toc);
-%% Train a classifier
+%% Train a classifier. 18 + 117 + 15 sec.
 tic;
 SVMModel = fitcsvm(trainFeatures, trainLabels);
+fprintf('Train SVM: %f seconds\n', toc);
+
+tic;
 CVSVMModel = crossval(SVMModel, 'KFold', 7);
 classLoss = kfoldLoss(CVSVMModel)
+save('svm.mat', 'SVMModel');
+fprintf('Cross Validation SVM: %f seconds\n', toc);
 
-fprintf('Train & Validate SVM: %f seconds\n', toc);
+tic;
+[predictLabel, score] = predict(SVMModel, testFeatures);
+errorRes = find(predictLabel ~= testLabels);
+errorRate = numel(errorRes) / size(predictLabel, 1);
+fprintf('Error rate:%f\n', errorRate);
+fprintf('Test SVM: %f seconds\n', toc);
