@@ -35,6 +35,14 @@ if(~exist('mexFelzenSegmentIndex'))
     mex FelzenSegment/mexFelzenSegmentIndex.cpp -output mexFelzenSegmentIndex;
 end
 
+%% Load images
+imageDir = 'E:/Code/ObjectDetection/new_data/train/image';
+imageNum = length(dir(fullfile(imageDir, '*.png')));
+labelDir = 'E:/Code/ObjectDetection/new_data/train/label';
+labelNum = length(dir(fullfile(labelDir, '*.txt')));
+assert(labelNum == imageNum);
+fprintf('Found %d images(labels).\n', labelNum);
+imageNum=2;
 %%
 % Parameters. Note that this controls the number of hierarchical
 % segmentations which are combined.
@@ -47,8 +55,8 @@ sigma = 0.8;
 numHierarchy = length(colorTypes) * length(kThresholds);
 
 % As an example, use a single Pascal VOC image
-%images = {'000015.jpg'};
-images = {'000008.png'};
+images = {'000015.jpg'};
+% images = {'000008.png'};
 %%%
 %%% Alternatively, do it on the whole set. (Un)comment line 67/68
 %%%
@@ -59,14 +67,17 @@ images = {'000008.png'};
 % For each image do Selective Search
 fprintf('Performing selective search: ');
 tic;
+% boxes = cell(1, imageNum);
 boxes = cell(1, length(images));
+% for i=1:imageNum
 for i=1:length(images)
     if mod(i,100) == 0
         fprintf('%d ', i);
     end
     idx = 1;
     currBox = cell(1, numHierarchy);
-    im = imread(images{i});
+    im = imread(sprintf('%s/%06d.png', imageDir, i-1));
+%     im = imread(images{i});
     %im = imread(sprintf(VOCopts.imgpath, images{i})); % For Pascal Data
     for k = kThresholds
         minSize = k; % We use minSize = k.

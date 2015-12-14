@@ -22,7 +22,7 @@ counter = 0;
 tic;
 for i = 1:carNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, i-1)));
-    if size(img, 1) > 40
+    if size(img, 1) > 35
         counter = counter + 1;
         carImg(:,:,counter) = imresize(img, [nSize nSize]);
     end
@@ -66,9 +66,9 @@ img = carImg(:,:,1);
 hogFeatureSize = length(hogFeature);
 
 rng(1);
-randCarIndex = randperm(carNum, pedNum);
-carNum = pedNum;
-% randCarIndex = randperm(carNum);
+% randCarIndex = randperm(carNum, pedNum);
+% carNum = pedNum;
+randCarIndex = randperm(carNum);
 randPedIndex = randperm(pedNum);
 
 trainCarNum = round(carNum * 0.7);
