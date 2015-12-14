@@ -1,4 +1,4 @@
-function out = countObjects()
+function countObjects
 %% 
 %labelDir = strrep(uigetdir(pwd), '\\', '/');
 labelDir = 'E:/Code/ObjectDetection/data_object_label_2/training/label_2';
