@@ -48,7 +48,7 @@ labelNum = length(dir(fullfile(labelDir, '*.txt')));
 assert(labelNum == imageNum);
 fprintf('Found %d images(labels).\n', labelNum);
 
-imageNum = 10;%For debug
+% imageNum = 5;%For debug
 
 %%
 % Parameters. Note that this controls the number of hierarchical
@@ -67,12 +67,12 @@ minSize = k;
 sigma = 0.8;
 
 backgroundDir = 'E:/Code/ObjectDetection/crop/background';
-carTh = 0.5;
-pedTh = 0.3;
+carTh = 0.3;
+pedTh = 0.2;
 minBgHeight = 30;
 bgNum = 2;
 bgIndex = 0;
-rng(1);
+rng(10);
 tic;
 fprintf('Looking for background examples.\n');
 % For each image, choose 'bgNum' background:
@@ -120,7 +120,7 @@ for i=1:imageNum
             end
             % If not overlapped with positive case
             if ~isOverlap
-               imwrite(im(currBox(1):currBox(3), currBox(2):currBox(4)), ...
+               imwrite(imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]), ...
                    sprintf('%s/%06d.png', backgroundDir, bgIndex));
                bgIndex = bgIndex + 1;
                counter = counter + 1;
