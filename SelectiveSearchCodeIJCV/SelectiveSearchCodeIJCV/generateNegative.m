@@ -78,7 +78,7 @@ fprintf('Looking for background examples.\n');
 % For each image, choose 'bgNum' background:
 for i=1:imageNum
     if mod(i,100) == 0
-        fprintf('%d ', i);
+        fprintf('%d\n', i);
     end
     
     % As an example, use a single image
@@ -89,7 +89,7 @@ for i=1:imageNum
     boxes = BoxRemoveDuplicates(boxes);
 
     % Read labels
-    objects = readLabels(labelDir, i);
+    objects = readLabels(labelDir, i-1);
     
     % Calculate overlap and save negative cases
     boxNum = size(boxes, 1);
