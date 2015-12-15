@@ -6,6 +6,7 @@
 *.asv
 *.png
 *.mexw64
+*.mexa64
 
 # Windows image file caches
 Thumbs.db
