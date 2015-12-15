@@ -7,15 +7,13 @@ close all;
 carDir = 'crop/cars';
 carNum = length(dir(fullfile(carDir, '*.png')));
 
-pedDir = 'crop/pedestrian';
+pedDir = 'crop/pedestrians';
 pedNum = length(dir(fullfile(pedDir, '*.png')));
-pedDir1 = 'crop/pedestrian_1';
-pedNum1 = length(dir(fullfile(pedDir1, '*.png')));
 
 bgDir = 'crop/background';
 bgNum = length(dir(fullfile(bgDir, '*.png')));
 
-fprintf('Found %d cars, %d pedestrians, %d background images.\n', carNum, pedNum+pedNum1, bgNum);
+fprintf('Found %d cars, %d pedestrians, %d background images.\n', carNum, pedNum, bgNum);
 
 %% Load images. 95 sec.
 nSize = 64;
@@ -34,18 +32,11 @@ carNum = counter;
 carImg = carImg(:,:, 1:carNum);
 fprintf('    %d selected cars.\n', carNum);
 
-pedImg = zeros(nSize, nSize, pedNum+pedNum1);
+pedImg = zeros(nSize, nSize, pedNum);
 counter = 0;
 for i = 1:pedNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', pedDir, i-1)));
-    if size(img, 1) > 35
-        counter = counter + 1;
-        pedImg(:,:,counter) = imresize(img, [nSize nSize]);
-    end
-end
-for i = 1:pedNum1
-    img = rgb2gray(imread(sprintf('%s/%06d.png', pedDir1, i-1)));
-    if size(img, 1) > 35
+    if size(img, 1) > 30
         counter = counter + 1;
         pedImg(:,:,counter) = imresize(img, [nSize nSize]);
     end
@@ -137,8 +128,8 @@ for k=trainBgNum+1 : bgNum
 end
 
 fprintf('Extract HoG Features: %f seconds\n', toc);
-%% Train two OvA (One vs All) classifiers. 161 + 1053 + 48 sec./ 103 + 721 + 32sec.
-% Car vs all
+%% Train two OvA (One vs All) classifiers. 
+% Car vs all : 161 + 1053 + 48 sec.
 fprintf('Preparing SVM: Car vs all.\n');
 tic;
 SVMModelCar = fitcsvm(trainFeatures, trainLabelsCar);
@@ -160,7 +151,7 @@ recall = TP / testCarNum;
 fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
 fprintf('    Test SVM: %f seconds\n', toc);
 
-% Pedestrian vs all
+% Pedestrian vs all : 103 + 721 + 32sec.
 fprintf('Preparing SVM: Pedestrian vs all.\n');
 tic;
 SVMModelPed = fitcsvm(trainFeatures, trainLabelsPed);
@@ -179,5 +170,28 @@ corrRate = sum(corrVec) / size(predictLabel, 1);
 TP = sum(corrVec(testCarNum+1 : testCarNum+testPedNum));
 precision = TP / sum(predictLabel);
 recall = TP / testPedNum;
+fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
+fprintf('    Test SVM: %f seconds\n', toc);
+
+%% Car vs Pedestrian : 27 + 181 + 11 sec.
+fprintf('Preparing SVM: Car vs Pedestrian.\n');
+tic;
+SVMModelCarPed = fitcsvm(trainFeatures(1 : trainCarNum+trainPedNum, :), ...
+    trainLabelsCar(1 : trainCarNum+trainPedNum));
+fprintf('    Train SVM: %f seconds\n', toc);
+
+tic;
+CVSVMModel = crossval(SVMModelCarPed, 'KFold', 7);
+classLoss = kfoldLoss(CVSVMModel)
+save('svm_car_ped.mat', 'SVMModelCarPed');
+fprintf('    Cross Validation SVM: %f seconds\n', toc);
+
+tic;
+[predictLabel, score] = predict(SVMModelCarPed, testFeatures(1 : testCarNum+testPedNum, :));
+corrVec = (predictLabel == testLabelsCar(1 : testCarNum+testPedNum));
+corrRate = sum(corrVec) / size(predictLabel, 1);
+TP = sum(corrVec(1:testCarNum));
+precision = TP / sum(predictLabel);
+recall = TP / testCarNum;
 fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
 fprintf('    Test SVM: %f seconds\n', toc);
