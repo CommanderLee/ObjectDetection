@@ -70,7 +70,9 @@ backgroundDir = 'E:/Code/ObjectDetection/crop/background';
 carTh = 0.3;
 pedTh = 0.2;
 minBgHeight = 30;
-bgNum = 2;
+
+% Change bgNum to determin how much background image we want from each img.
+bgNum = 6;
 bgIndex = 0;
 rng(10);
 tic;
