@@ -1,9 +1,13 @@
-% Generate the negative examples for the object detection task
+% Find the False Positives. 
+% Using Selective Search -> Test with trained SVM -> Find FP.
 % Modified from demo.m - Zhen
 % This demo shows how to use the software described in our IJCV paper: 
 %   Selective Search for Object Recognition,
 %   J.R.R. Uijlings, K.E.A. van de Sande, T. Gevers, A.W.M. Smeulders, IJCV 2013
-%%
+%% Initialization
+clear all;
+close all;
+
 addpath('Dependencies');
 
 fprintf('Demo of how to run the code for:\n');
@@ -39,7 +43,7 @@ if(~exist('mexFelzenSegmentIndex'))
     mex Dependencies/FelzenSegment/mexFelzenSegmentIndex.cpp -output mexFelzenSegmentIndex;
 end
 
-%% Load images
+%% Load images from the train set
 imageDir = 'E:/Code/ObjectDetection/new_data/train/image';
 imageNum = length(dir(fullfile(imageDir, '*.png')));
 labelDir = 'E:/Code/ObjectDetection/new_data/train/label';
@@ -48,9 +52,9 @@ labelNum = length(dir(fullfile(labelDir, '*.txt')));
 assert(labelNum == imageNum);
 fprintf('Found %d images(labels).\n', labelNum);
 
-% imageNum = 5;%For debug
+% imageNum = 1;%For debug
 
-%%
+%% Set parameters
 % Parameters. Note that this controls the number of hierarchical
 % segmentations which are combined.
 colorTypes = {'Hsv', 'Lab', 'RGI', 'H', 'Intensity'};
@@ -66,24 +70,36 @@ k = 200; % controls size of segments of initial segmentation.
 minSize = k;
 sigma = 0.8;
 
-backgroundDir = 'E:/Code/ObjectDetection/crop/background';
+fpDir = 'E:/Code/ObjectDetection/crop/false_positive';
+% Overlap threshold for cars and pedestrians. 0.7 and 0.5
+% Use 0.3 and 0.2 for generating.
+% Ref: http://www.cvlibs.net/datasets/kitti/eval_object.php
 carTh = 0.3;
 pedTh = 0.2;
-minBgHeight = 30;
+% Minium bounding box height that we consider. 
+% Ref: Readme file from development kit
+minObjHeight = 25;
 
-% Change bgNum to determin how many background images we want from each img.
-bgNum = 6;
-bgIndex = 0;
-rng(10);
+% Change fpNum to determin how many FP images we want from each img.
+fpNum = 2;
+fpIndex = 0;
+rng(1);
+
+load('svm_car.mat');
+load('svm_ped.mat');
+load('svm_car_ped.mat');
+cellSize = [8 8];
+imageSize = [64 64];
+
+%% Start searching
 tic;
-fprintf('Looking for background examples.\n');
+fprintf('Looking for false positives.\n');
 % For each image, choose 'bgNum' background:
 for i=1:imageNum
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
     
-    % As an example, use a single image
     im = imread(sprintf('%s/%06d.png', imageDir, i-1));
 
     % Perform Selective Search
@@ -93,52 +109,65 @@ for i=1:imageNum
     % Read labels
     objects = readLabels(labelDir, i-1);
     
-    % Calculate overlap and save negative cases
+    % Calculate overlap and save FP
     boxNum = size(boxes, 1);
     randBoxIndex = randperm(boxNum);
     counter = 0;
     % For each bounding box, check overlap with positive case
     for b = 1:boxNum
         currBox = boxes(randBoxIndex(b), :);
-        if currBox(3) - currBox(1) > minBgHeight
-            isOverlap = false;
-            % Check each positive case
-            for o = 1:numel(objects)
-                if strcmp(objects(o).type, 'Car') || strcmp(objects(o).type, 'Van')
-                    ratio = rectOverlap(currBox(1), currBox(2), currBox(3), currBox(4), ...
-                        objects(o).y1, objects(o).x1, objects(o).y2, objects(o).x2);
-                    if ratio > carTh
-                        isOverlap = true;
-                        break;
-                    end
-                elseif strcmp(objects(o).type, 'Pedestrian') || strcmp(objects(o).type, 'Person_sitting')
-                    ratio = rectOverlap(currBox(1), currBox(2), currBox(3), currBox(4), ...
-                        objects(o).y1, objects(o).x1, objects(o).y2, objects(o).x2);
-                    if ratio > pedTh
-                        isOverlap = true;
-                        break;
+        if currBox(3) - currBox(1) > minObjHeight
+            cropped = imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]);
+            feature = extractHOGFeatures(imresize(cropped, imageSize), 'CellSize', cellSize);
+            
+            % Check false car
+            [predictLabel, score] = predict(SVMModelCar, feature);
+            if predictLabel(1) == 1
+                isOverlap = false;
+                for o = 1:numel(objects)
+                    if strcmp(objects(o).type, 'Car') || strcmp(objects(o).type, 'Van')
+                        ratio = rectOverlap(currBox(1), currBox(2), currBox(3), currBox(4), ...
+                            objects(o).y1, objects(o).x1, objects(o).y2, objects(o).x2);
+                        if ratio > carTh
+                            isOverlap = true;
+                            break;
+                        end
                     end
                 end
+                if ~isOverlap
+                    % Not a car. So this is a FP.
+                    imwrite(cropped, sprintf('%s/%06d.png', fpDir, fpIndex));
+                    fpIndex = fpIndex + 1;
+                    counter = counter + 1;
+                end
             end
-            % If not overlapped with positive case
-            if ~isOverlap
-               imwrite(imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]), ...
-                   sprintf('%s/%06d.png', backgroundDir, bgIndex));
-               bgIndex = bgIndex + 1;
-               counter = counter + 1;
-               % Found enough negative case for this image
-               if counter >= bgNum
-                   break;
-               end
+            
+            % Check false pedestrian
+            [predictLabel, score] = predict(SVMModelPed, feature);
+            if predictLabel(1) == 1
+                isOverlap = false;
+                for o = 1:numel(objects)
+                    if strcmp(objects(o).type, 'Pedestrian') || strcmp(objects(o).type, 'Person_sitting')
+                        ratio = rectOverlap(currBox(1), currBox(2), currBox(3), currBox(4), ...
+                            objects(o).y1, objects(o).x1, objects(o).y2, objects(o).x2);
+                        if ratio > pedTh
+                            isOverlap = true;
+                            break;
+                        end
+                    end
+                end
+                if ~isOverlap
+                    % Not a pedestrian. So this is a FP.
+                    imwrite(cropped, sprintf('%s/%06d.png', fpDir, fpIndex));
+                    fpIndex = fpIndex + 1;
+                    counter = counter + 1;
+                end
             end
         end
+        % Found enough case for this image
+        if counter >= fpNum
+            break;
+        end
     end
-    
-    % Show boxes
-%     ShowRectsWithinImage(boxes, 5, 5, im);
-
-    % Show blobs which result from first similarity function
-%     hBlobs = RecreateBlobHierarchyIndIm(blobIndIm, blobBoxes, hierarchy{1});
-%     ShowBlobs(hBlobs, 5, 5, im);
 end
-fprintf('Found %d background examples. %f seconds.\n', bgIndex, toc);
+fprintf('Found %d false positives. Use %f seconds.\n', fpIndex, toc);

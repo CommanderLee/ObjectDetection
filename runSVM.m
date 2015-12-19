@@ -99,9 +99,10 @@ tempBg = min(20000, bgNum);
 randBgIndex = randperm(bgNum, tempBg);
 bgNum = tempBg;
 
-trainCarNum = round(carNum * 0.7);
-trainPedNum = round(pedNum * 0.7);
-trainBgNum = round(bgNum * 0.7);
+ratioTrainTest = 1;
+trainCarNum = round(carNum * ratioTrainTest);
+trainPedNum = round(pedNum * ratioTrainTest);
+trainBgNum = round(bgNum * ratioTrainTest);
 testCarNum = carNum - trainCarNum;
 testPedNum = pedNum - trainPedNum;
 testBgNum = bgNum - trainBgNum;
@@ -156,10 +157,12 @@ clear carImg pedImg bgImg randCarIndex randBgIndex randPedIndex;
 
 fprintf('Extract HoG Features: %f seconds\n', toc);
 %% Train, Validate, Test. Save the models.
-needValid = false;
-kFoldNum = 5;
+needValid = true;
+kFoldNum = 7;
+needTest = false;
+
 %% Train two OvA (One vs All) classifiers. 
-% Car vs all : 929 + ? + 66 sec.
+%% Car vs all : 929 + ? + 66 sec.
 fprintf('Preparing SVM: Car vs all.\n');
 tic;
 SVMModelCar = fitcsvm(trainFeatures, trainLabelsCar);
@@ -173,17 +176,19 @@ if needValid
     fprintf('    Cross Validation SVM: Loss:%f, and Time:%f seconds\n', classLoss, toc);
 end
 
-tic;
-[predictLabel, score] = predict(SVMModelCar, testFeatures);
-corrVec = (predictLabel == testLabelsCar);
-corrRate = sum(corrVec) / size(predictLabel, 1);
-TP = sum(corrVec(1:testCarNum));
-precision = TP / sum(predictLabel);
-recall = TP / testCarNum;
-fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
-fprintf('    Test SVM: %f seconds\n', toc);
+if needTest
+    tic;
+    [predictLabel, score] = predict(SVMModelCar, testFeatures);
+    corrVec = (predictLabel == testLabelsCar);
+    corrRate = sum(corrVec) / size(predictLabel, 1);
+    TP = sum(corrVec(1:testCarNum));
+    precision = TP / sum(predictLabel);
+    recall = TP / testCarNum;
+    fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
+    fprintf('    Test SVM: %f seconds\n', toc);
+end
 
-% Pedestrian vs all : 393 + ? + 44 sec.
+%% Pedestrian vs all : 393 + ? + 44 sec.
 fprintf('Preparing SVM: Pedestrian vs all.\n');
 tic;
 SVMModelPed = fitcsvm(trainFeatures, trainLabelsPed);
@@ -197,16 +202,17 @@ if needValid
     fprintf('    Cross Validation SVM: Loss:%f, and Time:%f seconds\n', classLoss, toc);
 end
 
-tic;
-[predictLabel, score] = predict(SVMModelPed, testFeatures);
-corrVec = (predictLabel == testLabelsPed);
-corrRate = sum(corrVec) / size(predictLabel, 1);
-TP = sum(corrVec(testCarNum+1 : testCarNum+testPedNum));
-precision = TP / sum(predictLabel);
-recall = TP / testPedNum;
-fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
-fprintf('    Test SVM: %f seconds\n', toc);
-
+if needTest
+    tic;
+    [predictLabel, score] = predict(SVMModelPed, testFeatures);
+    corrVec = (predictLabel == testLabelsPed);
+    corrRate = sum(corrVec) / size(predictLabel, 1);
+    TP = sum(corrVec(testCarNum+1 : testCarNum+testPedNum));
+    precision = TP / sum(predictLabel);
+    recall = TP / testPedNum;
+    fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
+    fprintf('    Test SVM: %f seconds\n', toc);
+end
 %% Car vs Pedestrian : 135 + ? + 16 sec.
 fprintf('Preparing SVM: Car vs Pedestrian.\n');
 tic;
@@ -222,14 +228,16 @@ if needValid
     fprintf('    Cross Validation SVM: Loss:%f, and Time:%f seconds\n', classLoss, toc);
 end
 
-tic;
-[predictLabel, score] = predict(SVMModelCarPed, testFeatures(1 : testCarNum+testPedNum, :));
-corrVec = (predictLabel == testLabelsCar(1 : testCarNum+testPedNum));
-corrRate = sum(corrVec) / size(predictLabel, 1);
-TP = sum(corrVec(1:testCarNum));
-precision = TP / sum(predictLabel);
-recall = TP / testCarNum;
-fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
-fprintf('    Test SVM: %f seconds\n', toc);
+if needTest
+    tic;
+    [predictLabel, score] = predict(SVMModelCarPed, testFeatures(1 : testCarNum+testPedNum, :));
+    corrVec = (predictLabel == testLabelsCar(1 : testCarNum+testPedNum));
+    corrRate = sum(corrVec) / size(predictLabel, 1);
+    TP = sum(corrVec(1:testCarNum));
+    precision = TP / sum(predictLabel);
+    recall = TP / testCarNum;
+    fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
+    fprintf('    Test SVM: %f seconds\n', toc);
+end
 
 clear trainFeatures testFeatures SVMModelCar SVMModelPed SVMModelCarPed;

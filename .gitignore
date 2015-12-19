@@ -2,6 +2,7 @@
 /data_object_label_2
 /crop
 /new_data
+/svmModel
 *.mat
 *.asv
 *.png
