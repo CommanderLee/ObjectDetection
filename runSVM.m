@@ -15,7 +15,7 @@ bgNum = length(dir(fullfile(bgDir, '*.png')));
 
 fprintf('Found %d cars, %d pedestrians, %d background images.\n', carNum, pedNum, bgNum);
 
-%% Load images. 141 sec.
+%% Load images. 175 sec.
 nSize = 64;
 tic;
 rng(1);
@@ -49,15 +49,19 @@ for i = 1:pedNum
         im3 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
         randBias = rand() * 0.4 - 0.2;
         im4 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+        randBias = rand() * 0.4 - 0.2;
+        im5 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+        randBias = rand() * 0.4 - 0.2;
+        im6 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
         pedImg(:,:,counter) = im1;
         pedImg(:,:,counter+1) = im2;
         pedImg(:,:,counter+2) = im3;
         pedImg(:,:,counter+3) = im4;
-        pedImg(:,:,counter+4) = fliplr(im1);
-        pedImg(:,:,counter+5) = fliplr(im2);
-%         pedImg(:,:,counter+6) = fliplr(im3);
-%         pedImg(:,:,counter+7) = fliplr(im4);
-        counter = counter + 6;
+        pedImg(:,:,counter+4) = im5;
+        pedImg(:,:,counter+5) = im6;
+        pedImg(:,:,counter+6) = fliplr(im1);
+        pedImg(:,:,counter+7) = fliplr(im2);
+        counter = counter + 8;
     end
 end
 pedNum = counter-1;
@@ -73,7 +77,7 @@ fprintf('    %d background images.\n', bgNum);
 
 fprintf('Load Images: %f seconds\n', toc);
 
-%% Extract HoG for training & testing set. 60 sec.
+%% Extract HoG for training & testing set. 65 sec.
 tic;
 cellSize = [8 8];
 % img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, 0)));
@@ -151,18 +155,23 @@ end
 clear carImg pedImg bgImg randCarIndex randBgIndex randPedIndex;
 
 fprintf('Extract HoG Features: %f seconds\n', toc);
+%% Train, Validate, Test. Save the models.
+needValid = false;
+kFoldNum = 5;
 %% Train two OvA (One vs All) classifiers. 
-% Car vs all : 810 + ? + 68 sec.
+% Car vs all : 929 + ? + 66 sec.
 fprintf('Preparing SVM: Car vs all.\n');
 tic;
 SVMModelCar = fitcsvm(trainFeatures, trainLabelsCar);
+save('svm_car.mat', 'SVMModelCar');
 fprintf('    Train SVM: %f seconds\n', toc);
 
-% tic;
-% CVSVMModel = crossval(SVMModelCar, 'KFold', 7);
-% classLoss = kfoldLoss(CVSVMModel)
-% save('svm_car.mat', 'SVMModelCar');
-% fprintf('    Cross Validation SVM: %f seconds\n', toc);
+if needValid
+    tic;
+    CVSVMModel = crossval(SVMModelCar, 'KFold', kFoldNum);
+    classLoss = kfoldLoss(CVSVMModel);
+    fprintf('    Cross Validation SVM: Loss:%f, and Time:%f seconds\n', classLoss, toc);
+end
 
 tic;
 [predictLabel, score] = predict(SVMModelCar, testFeatures);
@@ -174,17 +183,19 @@ recall = TP / testCarNum;
 fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
 fprintf('    Test SVM: %f seconds\n', toc);
 
-% Pedestrian vs all : 306 + ? + 38sec.
+% Pedestrian vs all : 393 + ? + 44 sec.
 fprintf('Preparing SVM: Pedestrian vs all.\n');
 tic;
 SVMModelPed = fitcsvm(trainFeatures, trainLabelsPed);
+save('svm_ped.mat', 'SVMModelPed');
 fprintf('    Train SVM: %f seconds\n', toc);
 
-% tic;
-% CVSVMModel = crossval(SVMModelPed, 'KFold', 7);
-% classLoss = kfoldLoss(CVSVMModel)
-% save('svm_ped.mat', 'SVMModelPed');
-% fprintf('    Cross Validation SVM: %f seconds\n', toc);
+if needValid
+    tic;
+    CVSVMModel = crossval(SVMModelPed, 'KFold', kFoldNum);
+    classLoss = kfoldLoss(CVSVMModel);
+    fprintf('    Cross Validation SVM: Loss:%f, and Time:%f seconds\n', classLoss, toc);
+end
 
 tic;
 [predictLabel, score] = predict(SVMModelPed, testFeatures);
@@ -196,18 +207,20 @@ recall = TP / testPedNum;
 fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
 fprintf('    Test SVM: %f seconds\n', toc);
 
-%% Car vs Pedestrian : 110 + ? + 13 sec.
+%% Car vs Pedestrian : 135 + ? + 16 sec.
 fprintf('Preparing SVM: Car vs Pedestrian.\n');
 tic;
 SVMModelCarPed = fitcsvm(trainFeatures(1 : trainCarNum+trainPedNum, :), ...
     trainLabelsCar(1 : trainCarNum+trainPedNum));
+save('svm_car_ped.mat', 'SVMModelCarPed');
 fprintf('    Train SVM: %f seconds\n', toc);
 
-% tic;
-% CVSVMModel = crossval(SVMModelCarPed, 'KFold', 7);
-% classLoss = kfoldLoss(CVSVMModel)
-% save('svm_car_ped.mat', 'SVMModelCarPed');
-% fprintf('    Cross Validation SVM: %f seconds\n', toc);
+if needValid
+    tic;
+    CVSVMModel = crossval(SVMModelCarPed, 'KFold', kFoldNum);
+    classLoss = kfoldLoss(CVSVMModel);
+    fprintf('    Cross Validation SVM: Loss:%f, and Time:%f seconds\n', classLoss, toc);
+end
 
 tic;
 [predictLabel, score] = predict(SVMModelCarPed, testFeatures(1 : testCarNum+testPedNum, :));
@@ -219,4 +232,4 @@ recall = TP / testCarNum;
 fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
 fprintf('    Test SVM: %f seconds\n', toc);
 
-clear trainFeatures testFeatures;
+clear trainFeatures testFeatures SVMModelCar SVMModelPed SVMModelCarPed;
