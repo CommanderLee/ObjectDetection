@@ -15,7 +15,7 @@ bgNum = length(dir(fullfile(bgDir, '*.png')));
 
 fprintf('Found %d cars, %d pedestrians, %d background images.\n', carNum, pedNum, bgNum);
 
-%% Load images. 175 sec.
+%% Load images. 161-175 sec.
 nSize = 64;
 tic;
 rng(1);
@@ -26,12 +26,10 @@ for i = 1:carNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, i-1)));
     if size(img, 1) > 30
         im1 = imresize(img, [nSize nSize]);
-%         im2 = imadjust(im1);
-        im3 = fliplr(im1);
+%         im2 = fliplr(im1);
         carImg(:,:,counter) = im1;
 %         carImg(:,:,counter+1) = im2;
-        carImg(:,:,counter+1) = im3;
-        counter = counter + 2;
+        counter = counter + 1;
     end
 end
 carNum = counter-1;
@@ -44,24 +42,24 @@ for i = 1:pedNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', pedDir, i-1)));
     if size(img, 1) > 30
         im1 = imresize(img, [nSize nSize]);
-        im2 = imadjust(im1);
-        randBias = rand() * 0.4 - 0.2;
-        im3 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
-        randBias = rand() * 0.4 - 0.2;
-        im4 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
-        randBias = rand() * 0.4 - 0.2;
-        im5 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
-        randBias = rand() * 0.4 - 0.2;
-        im6 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+%         im2 = imadjust(im1);
+%         randBias = rand() * 0.4 - 0.2;
+%         im3 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+%         randBias = rand() * 0.4 - 0.2;
+%         im4 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+%         randBias = rand() * 0.4 - 0.2;
+%         im5 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+%         randBias = rand() * 0.4 - 0.2;
+%         im6 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
         pedImg(:,:,counter) = im1;
-        pedImg(:,:,counter+1) = im2;
-        pedImg(:,:,counter+2) = im3;
-        pedImg(:,:,counter+3) = im4;
-        pedImg(:,:,counter+4) = im5;
-        pedImg(:,:,counter+5) = im6;
-        pedImg(:,:,counter+6) = fliplr(im1);
-        pedImg(:,:,counter+7) = fliplr(im2);
-        counter = counter + 8;
+%         pedImg(:,:,counter+1) = im2;
+%         pedImg(:,:,counter+2) = im3;
+%         pedImg(:,:,counter+3) = im4;
+%         pedImg(:,:,counter+4) = im5;
+%         pedImg(:,:,counter+5) = im6;
+%         pedImg(:,:,counter+6) = fliplr(im1);
+%         pedImg(:,:,counter+7) = fliplr(im2);
+        counter = counter + 1;
     end
 end
 pedNum = counter-1;
@@ -77,7 +75,7 @@ fprintf('    %d background images.\n', bgNum);
 
 fprintf('Load Images: %f seconds\n', toc);
 
-%% Extract HoG for training & testing set. 65 sec.
+%% Extract HoG for training & testing set. 65-70 sec.
 tic;
 cellSize = [8 8];
 % img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, 0)));
@@ -95,7 +93,7 @@ hogFeatureSize = length(hogFeature);
 randCarIndex = randperm(carNum);
 randPedIndex = randperm(pedNum);
 % Keep some of the backgrounds
-tempBg = min(20000, bgNum);
+tempBg = min(5237, bgNum);
 randBgIndex = randperm(bgNum, tempBg);
 bgNum = tempBg;
 
@@ -162,7 +160,7 @@ kFoldNum = 7;
 needTest = false;
 
 %% Train two OvA (One vs All) classifiers. 
-%% Car vs all : 929 + ? + 66 sec.
+%% Car vs all : 2389 + 10664 + ? sec.
 fprintf('Preparing SVM: Car vs all.\n');
 tic;
 SVMModelCar = fitcsvm(trainFeatures, trainLabelsCar);
@@ -188,7 +186,7 @@ if needTest
     fprintf('    Test SVM: %f seconds\n', toc);
 end
 
-%% Pedestrian vs all : 393 + ? + 44 sec.
+%% Pedestrian vs all : 1207 + 5439 + 44 sec.
 fprintf('Preparing SVM: Pedestrian vs all.\n');
 tic;
 SVMModelPed = fitcsvm(trainFeatures, trainLabelsPed);
@@ -213,7 +211,7 @@ if needTest
     fprintf('    Correct rate:%f, Precision:%f, Recall:%f\n', corrRate, precision, recall);
     fprintf('    Test SVM: %f seconds\n', toc);
 end
-%% Car vs Pedestrian : 135 + ? + 16 sec.
+%% Car vs Pedestrian : 325 + 1355 + 16 sec.
 fprintf('Preparing SVM: Car vs Pedestrian.\n');
 tic;
 SVMModelCarPed = fitcsvm(trainFeatures(1 : trainCarNum+trainPedNum, :), ...

@@ -1,5 +1,5 @@
-% Find the False Positives. 
-% Using Selective Search -> Test with trained SVM -> Find FP.
+% Run final test
+% Using Selective Search -> Test with trained SVM -> Output results.
 % Modified from demo.m - Zhen
 % This demo shows how to use the software described in our IJCV paper: 
 %   Selective Search for Object Recognition,
@@ -43,18 +43,19 @@ if(~exist('mexFelzenSegmentIndex'))
     mex Dependencies/FelzenSegment/mexFelzenSegmentIndex.cpp -output mexFelzenSegmentIndex;
 end
 
-%% Load images from the train set
-imageDir = 'E:/Code/ObjectDetection/new_data/train/image';
+%% Load images & labels from the test set
+imageDir = 'E:/Code/ObjectDetection/new_data/test/image';
 imageNum = length(dir(fullfile(imageDir, '*.png')));
-labelDir = 'E:/Code/ObjectDetection/new_data/train/label';
-labelNum = length(dir(fullfile(labelDir, '*.txt')));
+% labelDir = 'E:/Code/ObjectDetection/new_data/test/label';
+% labelNum = length(dir(fullfile(labelDir, '*.txt')));
+outputDir = 'E:/Code/ObjectDetection/new_data/test/output';
 
 assert(labelNum == imageNum);
 fprintf('Found %d images(labels).\n', labelNum);
 
-% imageNum = 1;%For debug
+imageNum = 1;%For debug
 
-%% Set parameters
+%% Set parameters & Load classifiers
 % Parameters. Note that this controls the number of hierarchical
 % segmentations which are combined.
 colorTypes = {'Hsv', 'Lab', 'RGI', 'H', 'Intensity'};
@@ -72,17 +73,13 @@ sigma = 0.8;
 
 fpDir = 'E:/Code/ObjectDetection/crop/false_positive';
 % Overlap threshold for cars and pedestrians. 0.7 and 0.5
-% Use 0.3 and 0.2 for generating.
 % Ref: http://www.cvlibs.net/datasets/kitti/eval_object.php
-carTh = 0.3;
-pedTh = 0.2;
+carTh = 0.7;
+pedTh = 0.5;
 % Minium bounding box height that we consider. 
 % Ref: Readme file from development kit
 minObjHeight = 25;
 
-% Change fpNum to determin how many FP images we want from each img.
-fpNum = 2;
-fpIndex = 0;
 rng(1);
 
 load('svm_car.mat');
@@ -91,83 +88,68 @@ load('svm_car_ped.mat');
 cellSize = [8 8];
 imageSize = [64 64];
 
-%% Start searching
+%% Start testing
 tic;
-fprintf('Looking for false positives.\n');
+fprintf('Start testing.\n');
 
 for i=1:imageNum
-    if mod(i,100) == 0
-        fprintf('%d\n', i);
-    end
-    
     im = imread(sprintf('%s/%06d.png', imageDir, i-1));
 
     % Perform Selective Search
     [boxes blobIndIm blobBoxes hierarchy] = Image2HierarchicalGrouping(im, sigma, k, minSize, colorType, simFunctionHandles);
     boxes = BoxRemoveDuplicates(boxes);
-
-    % Read labels
-    objects = readLabels(labelDir, i-1);
-    
-    % Calculate overlap and save FP
     boxNum = size(boxes, 1);
-    randBoxIndex = randperm(boxNum);
-    counter = 0;
-    % For each bounding box, check overlap with positive case
+    
+    objIndex = 1;
+    objects = [];
+    carNum = 0;
+    pedNum = 0;
+    % For each bounding box, test each box with SVM
     for b = 1:boxNum
         currBox = boxes(randBoxIndex(b), :);
         if currBox(3) - currBox(1) > minObjHeight
             cropped = imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]);
             feature = extractHOGFeatures(imresize(cropped, imageSize), 'CellSize', cellSize);
             
-            % Check false car
-            [predictLabel, score] = predict(SVMModelCar, feature);
-            if predictLabel(1) == 1
-                isOverlap = false;
-                for o = 1:numel(objects)
-                    if strcmp(objects(o).type, 'Car') || strcmp(objects(o).type, 'Van')
-                        ratio = rectOverlap(currBox(1), currBox(2), currBox(3), currBox(4), ...
-                            objects(o).y1, objects(o).x1, objects(o).y2, objects(o).x2);
-                        if ratio > carTh
-                            isOverlap = true;
-                            break;
-                        end
-                    end
+            % Test with classifiers
+            [predictLabelCar, scoreCar] = predict(SVMModelCar, feature);
+            [predictLabelPed, scorePed] = predict(SVMModelPed, feature);
+
+            if predictLabelCar(1) == 1 && predictLabelPed(1) == 1
+                [predictLabel, score] = predict(SVMModelCarPed, feature);
+                if predictLabel(1) == 1
+                    objects(objIndex).type  = 'Car';
+                    carNum = carNum + 1;
+                else
+                    objects(objIndex).type  = 'Pedestrian';
+                    pedNum = pedNum + 1;
                 end
-                if ~isOverlap
-                    % Not a car. So this is a FP.
-                    imwrite(cropped, sprintf('%s/%06d.png', fpDir, fpIndex));
-                    fpIndex = fpIndex + 1;
-                    counter = counter + 1;
-                end
+                objects(objIndex).score = score(1);
+                
+            elseif predictLabelCar(1) == 1 && predictLabelPed(1) == 0
+                objects(objIndex).type  = 'Car';
+                objects(objIndex).score = scoreCar(1);
+                carNum = carNum + 1;
+                
+            elseif predictLabelCar(1) == 0 && predictLabelPed(1) == 1
+                objects(objIndex).type  = 'Pedestrian';
+                objects(objIndex).score = scorePed(1);
+                pedNum = pedNum + 1;
             end
             
-            % Check false pedestrian
-            [predictLabel, score] = predict(SVMModelPed, feature);
-            if predictLabel(1) == 1
-                isOverlap = false;
-                for o = 1:numel(objects)
-                    if strcmp(objects(o).type, 'Pedestrian') || strcmp(objects(o).type, 'Person_sitting')
-                        ratio = rectOverlap(currBox(1), currBox(2), currBox(3), currBox(4), ...
-                            objects(o).y1, objects(o).x1, objects(o).y2, objects(o).x2);
-                        if ratio > pedTh
-                            isOverlap = true;
-                            break;
-                        end
-                    end
-                end
-                if ~isOverlap
-                    % Not a pedestrian. So this is a FP.
-                    imwrite(cropped, sprintf('%s/%06d.png', fpDir, fpIndex));
-                    fpIndex = fpIndex + 1;
-                    counter = counter + 1;
-                end
+            % Find something
+            if predictLabelCar(1) + predictLabelPed(1) >= 1
+                objects(objIndex).x1    = currBox(2);
+                objects(objIndex).y1    = currBox(1);
+                objects(objIndex).x2    = currBox(4);
+                objects(objIndex).y2    = currBox(3);
+                objects(objIndex).alpha = pi/2;
+                objIndex = objIndex + 1;
             end
         end
-        % Found enough case for this image
-        if counter >= fpNum
-            break;
-        end
     end
+    % write objects to file
+    writeLabels(objects, outputDir, i-1);
+    fprintf('%06d: Find %d cars and %d pedestrians.\n', i-1, carNum, pedNum);
 end
-fprintf('Found %d false positives. Use %f seconds.\n', fpIndex, toc);
+fprintf('Complete! Used %f seconds.\n', toc);
