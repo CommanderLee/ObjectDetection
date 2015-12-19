@@ -72,10 +72,6 @@ minSize = k;
 sigma = 0.8;
 
 fpDir = 'E:/Code/ObjectDetection/crop/false_positive';
-% Overlap threshold for cars and pedestrians. 0.7 and 0.5
-% Ref: http://www.cvlibs.net/datasets/kitti/eval_object.php
-carTh = 0.7;
-pedTh = 0.5;
 % Minium bounding box height that we consider. 
 % Ref: Readme file from development kit
 minObjHeight = 25;
