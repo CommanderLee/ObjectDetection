@@ -40,7 +40,7 @@ Toronto, ON, M5S 2E4 \\
 
 \maketitle
 
-
+\iffalse
 \begin{abstract}
 TODO: The abstract paragraph should be indented 1/2~inch (3~picas) on both left and
 right-hand margins. Use 10~point type, with a vertical spacing of 11~points.
@@ -48,7 +48,7 @@ The word \textbf{Abstract} must be centered, bold, and in point size 12. Two
 line spaces precede the abstract. The abstract must be limited to one
 paragraph.
 \end{abstract}
-
+\fi
 
 \section{Introduction}
 
@@ -78,6 +78,32 @@ object detection accuracy. It has the best accuracy on car detection on KITTI by
 [old]Our method will be based on CNN and FCN, with some techniques to deal with occlusion and other issues. We will try to make it accurate on all of the three detection tasks. The performance of our methods will be compared with that of DeepParts and DenseBox.
 
 In many tasks, since the number of images and windows to evaluate is huge, we often rely on a weak classifier to get proposals for the more expensive classifier. Selective Search \cite{van2011segmentation} is a successful algorithm, which emphasize recall to include all image fragments of potential relevance. 
+
+\section{Methods}
+
+\section{Experiments}
+
+\subsection{Data set}
+
+We use the KITTI data set for Object Detection \cite{Geiger2012}, which contains 7481 color images with ground truth bounding box labels, including 28782 cars and 4487 pedestrians. We partition the data set to a training set contains 5237 images(70\%), and a testing set contains 2244 images(30\%). Then we run different algorithms on the data set and analyze the results.
+
+\subsection{Selective Search + SVM}
+
+\subsubsection{Pre-process}
+
+First, we crop the cars and pedestrians from the images to generate the positive examples. We noticed that we have far more cars than pedestrians in the data set. To balance the difference, we multiply the pedestrian image set by adding a random bias to the color map (-20\% to +20\%) repeatedly. We also reverse the original image horizontally to make full use of the training set. Since the KITTI benchmark only evaluate objects larger than 25 pixels (height), we ignore these small objects in the training set. After all of these augmenting and filtering strategies, we have 22576 cars and 20960 pedestrians as positive examples for training.
+
+We use the Selective Search \cite{van2011segmentation} to generate the negative examples. We randomly select images from the training set, run Selective Search, and find out background segments, which have a 0\% to 30\% overlap with a positive example. We generate 20000 negative examples for training. 
+
+\subsubsection{Training}
+
+\subsubsection{Validation}
+
+\subsubsection{Testing}
+
+\subsection{Zhicong: TODO}
+
+\section{Conclusion}
 
 \iffalse 
 
