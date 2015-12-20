@@ -13,7 +13,11 @@ pedNum = length(dir(fullfile(pedDir, '*.png')));
 bgDir = 'crop/background';
 bgNum = length(dir(fullfile(bgDir, '*.png')));
 
-fprintf('Found %d cars, %d pedestrians, %d background images.\n', carNum, pedNum, bgNum);
+fpDir = 'crop/false_positive';
+fpNum = length(dir(fullfile(fpDir, '*.png')));
+
+fprintf('Found %d cars, %d pedestrians, %d background images, %d false positives.\n', ...
+    carNum, pedNum, bgNum, fpNum);
 
 %% Load images. 161-175 sec.
 nSize = 64;
@@ -26,10 +30,10 @@ for i = 1:carNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', carDir, i-1)));
     if size(img, 1) > 30
         im1 = imresize(img, [nSize nSize]);
-%         im2 = fliplr(im1);
+        im2 = fliplr(im1);
         carImg(:,:,counter) = im1;
-%         carImg(:,:,counter+1) = im2;
-        counter = counter + 1;
+        carImg(:,:,counter+1) = im2;
+        counter = counter + 2;
     end
 end
 carNum = counter-1;
@@ -42,35 +46,42 @@ for i = 1:pedNum
     img = rgb2gray(imread(sprintf('%s/%06d.png', pedDir, i-1)));
     if size(img, 1) > 30
         im1 = imresize(img, [nSize nSize]);
-%         im2 = imadjust(im1);
-%         randBias = rand() * 0.4 - 0.2;
-%         im3 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
-%         randBias = rand() * 0.4 - 0.2;
-%         im4 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
-%         randBias = rand() * 0.4 - 0.2;
-%         im5 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
-%         randBias = rand() * 0.4 - 0.2;
-%         im6 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+        im2 = imadjust(im1);
+        randBias = rand() * 0.4 - 0.2;
+        im3 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+        randBias = rand() * 0.4 - 0.2;
+        im4 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+        randBias = rand() * 0.4 - 0.2;
+        im5 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
+        randBias = rand() * 0.4 - 0.2;
+        im6 = imadjust(im1, [0;1], [max(0, randBias);min(1, 1+randBias)]);
         pedImg(:,:,counter) = im1;
-%         pedImg(:,:,counter+1) = im2;
-%         pedImg(:,:,counter+2) = im3;
-%         pedImg(:,:,counter+3) = im4;
-%         pedImg(:,:,counter+4) = im5;
-%         pedImg(:,:,counter+5) = im6;
-%         pedImg(:,:,counter+6) = fliplr(im1);
-%         pedImg(:,:,counter+7) = fliplr(im2);
-        counter = counter + 1;
+        pedImg(:,:,counter+1) = im2;
+        pedImg(:,:,counter+2) = im3;
+        pedImg(:,:,counter+3) = im4;
+        pedImg(:,:,counter+4) = im5;
+        pedImg(:,:,counter+5) = im6;
+        pedImg(:,:,counter+6) = fliplr(im1);
+        pedImg(:,:,counter+7) = fliplr(im2);
+        counter = counter + 8;
     end
 end
 pedNum = counter-1;
 pedImg = pedImg(:,:, 1:pedNum);
 fprintf('    %d selected pedestrians(augmented).\n', pedNum);
 
-bgImg = zeros(nSize, nSize, bgNum);
-for i = 1:bgNum
-    img = rgb2gray(imread(sprintf('%s/%06d.png', bgDir, i-1)));
+tempBgNum = min(20000, bgNum);
+tempBgIndex = randperm(bgNum, tempBgNum)-1;
+bgImg = zeros(nSize, nSize, tempBgNum + fpNum);
+for i = 1:tempBgNum
+    img = rgb2gray(imread(sprintf('%s/%06d.png', bgDir, tempBgIndex(i))));
     bgImg(:,:,i) = imresize(img, [nSize nSize]);
 end
+for j = 1:fpNum
+    img = rgb2gray(imread(sprintf('%s/%06d.png', fpDir, j-1)));
+    bgImg(:,:,j + tempBgNum) = imresize(img, [nSize nSize]);
+end
+bgNum = tempBgNum + fpNum
 fprintf('    %d background images.\n', bgNum);
 
 fprintf('Load Images: %f seconds\n', toc);
@@ -92,10 +103,11 @@ hogFeatureSize = length(hogFeature);
 % carNum = pedNum;
 randCarIndex = randperm(carNum);
 randPedIndex = randperm(pedNum);
+randBgIndex = randperm(bgNum);
 % Keep some of the backgrounds
-tempBg = min(5237, bgNum);
-randBgIndex = randperm(bgNum, tempBg);
-bgNum = tempBg;
+% tempBg = min(5237, bgNum);
+% randBgIndex = randperm(bgNum, tempBg);
+% bgNum = tempBg;
 
 ratioTrainTest = 1;
 trainCarNum = round(carNum * ratioTrainTest);
@@ -155,7 +167,7 @@ clear carImg pedImg bgImg randCarIndex randBgIndex randPedIndex;
 
 fprintf('Extract HoG Features: %f seconds\n', toc);
 %% Train, Validate, Test. Save the models.
-needValid = true;
+needValid = false;
 kFoldNum = 7;
 needTest = false;
 

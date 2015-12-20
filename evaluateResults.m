@@ -12,10 +12,10 @@ outputDir = 'E:/Code/ObjectDetection/new_data/test/output';
 outputNum = length(dir(fullfile(outputDir, '*.txt')));
 
 assert(labelNum == imageNum);
-assert(labelNum == outputNum);
+% assert(labelNum == outputNum);
 fprintf('Found %d images(labels).\n', labelNum);
 
-imageNum = 1;%For debug
+imageNum = 3;%For debug
 
 %% Start evaluation
 tic;
@@ -43,7 +43,7 @@ for i=1:imageNum
     % Read labels
     corrObjects = readLabels(labelDir, i-1);
     corrObjNum = numel(corrObjects);
-    outObjects = readLabels(outputDir, i-1);
+    outObjects = readOutputLabels(outputDir, i-1);
     outObjNum = numel(outObjects);
     % Increase if we find this object
     findObjects = zeros(corrObjNum, 1);
@@ -117,7 +117,7 @@ carRecall = carTP / (carTP + carFN);
 pedPrecision = pedTP / (pedTP + pedFP);
 pedRecall = pedTP / (pedTP + pedFN);
 
-Result = sprintf('\\Blank & TP & FP & FN & Precision & Recall\\\\ \nCar & %d & %d & %d & %f & %f\nPed & %d & %d & %d & %f & %f\n', ...
+Result = sprintf('    & TP & FP & FN & Precision & Recall\\\\ \nCar & %d & %d & %d & %f & %f\nPed & %d & %d & %d & %f & %f\n', ...
     carTP, carFP, carFN, carPrecision, carRecall, ...
     pedTP, pedFP, pedFN, pedPrecision, pedRecall);
 fprintf(Result);

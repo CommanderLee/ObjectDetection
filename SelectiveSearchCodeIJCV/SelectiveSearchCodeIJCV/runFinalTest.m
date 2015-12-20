@@ -50,10 +50,9 @@ imageNum = length(dir(fullfile(imageDir, '*.png')));
 % labelNum = length(dir(fullfile(labelDir, '*.txt')));
 outputDir = 'E:/Code/ObjectDetection/new_data/test/output';
 
-assert(labelNum == imageNum);
-fprintf('Found %d images(labels).\n', labelNum);
+fprintf('Found %d images.\n', imageNum);
 
-imageNum = 1;%For debug
+imageNum = 3;%For debug
 
 %% Set parameters & Load classifiers
 % Parameters. Note that this controls the number of hierarchical
@@ -94,7 +93,7 @@ for i=1:imageNum
     % Perform Selective Search
     [boxes blobIndIm blobBoxes hierarchy] = Image2HierarchicalGrouping(im, sigma, k, minSize, colorType, simFunctionHandles);
     boxes = BoxRemoveDuplicates(boxes);
-    boxNum = size(boxes, 1);
+    boxNum = min(size(boxes, 1), 30);
     
     objIndex = 1;
     objects = [];
@@ -102,7 +101,7 @@ for i=1:imageNum
     pedNum = 0;
     % For each bounding box, test each box with SVM
     for b = 1:boxNum
-        currBox = boxes(randBoxIndex(b), :);
+        currBox = boxes(b, :);
         if currBox(3) - currBox(1) > minObjHeight
             cropped = imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]);
             feature = extractHOGFeatures(imresize(cropped, imageSize), 'CellSize', cellSize);

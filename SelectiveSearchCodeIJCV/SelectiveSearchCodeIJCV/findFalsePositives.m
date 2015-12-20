@@ -91,7 +91,7 @@ load('svm_car_ped.mat');
 cellSize = [8 8];
 imageSize = [64 64];
 
-%% Start searching
+%% Start searching: 37110 seconds
 tic;
 fprintf('Looking for false positives.\n');
 
