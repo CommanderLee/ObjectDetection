@@ -5,7 +5,7 @@
 %\documentstyle[nips14submit_09,times,art10]{article} % For LaTeX 2.09
 
 
-\title{CSC 2515 Project Proposal \\- Autonomous Driving: Object Detection}
+\title{Report - Autonomous Driving: Object Detection}
 
 
 \author{
@@ -40,46 +40,48 @@ Toronto, ON, M5S 2E4 \\
 
 \maketitle
 
-\iffalse
+
 \begin{abstract}
-The abstract paragraph should be indented 1/2~inch (3~picas) on both left and
+TODO: The abstract paragraph should be indented 1/2~inch (3~picas) on both left and
 right-hand margins. Use 10~point type, with a vertical spacing of 11~points.
 The word \textbf{Abstract} must be centered, bold, and in point size 12. Two
 line spaces precede the abstract. The abstract must be limited to one
 paragraph.
 \end{abstract}
-\fi 
+
 
 \section{Introduction}
 
-The goal of this project is to detect the cars, pedestrians and cyclists in the given image, locating the 2D bounding box of the object correctly. Such detection techniques would make vision-based autonomous driving systems more robust and accurate, hence increasing the possibility of adopting them in the real life. 
+[old]The goal of this project is to detect the cars and pedestrians in the given image, locating the 2D bounding box of the object correctly. Such detection techniques would make vision-based autonomous driving systems more robust and accurate, hence increasing the possibility of adopting them in the real life. 
 
-The basic idea of this project came from The KITTI Vision Benchmark Suite [2]. According to the website, an overlap of 70\% is required for a detection of a car, while an overlap of 50\% is required for the pedestrians and cyclists.
+[old]The basic idea of this project came from The KITTI Vision Benchmark Suite [2]. According to the website, an overlap of 70\% is required for a detection of a car, while an overlap of 50\% is required for the pedestrians.
 
-To achieve our goals, we will download the left color images of object, camera calibration and training
+[old]To achieve our goals, we will download the left color images of object, camera calibration and training
 labels data from \texttt{http://www.cvlibs.net/datasets/kitti/eval\_object.php}, as well as the development kit, upon which we will train the model and evaluate our methods. The labeled training data will be splitted into training, validation, and testing, which takes 60\%, 10\% and 30\% respectively. Besides KITTI, we would also use some other datasets to test our methods, especially on pedestrain detection, including Caltech Pedestrian Detection Benchmark[7] and Daimler Pedestrian Segmentation Benchmark Dataset[1].
 
-Inspired by the ranking of different methods on the KITTI website, we would try to implement those with very good performence and without using other sensor data, for the reason that such methods are more accessible and have better potential to be implemented even on mobile devices. We would try to improve the training model based on the findings of the state-of-the-art to come up with our own method, and evaluate the performance of it.We expect that our method can reach a high accuracy on the test set with an optimized speed. 
+[old]Inspired by the ranking of different methods on the KITTI website, we would try to implement those with very good performence and without using other sensor data, for the reason that such methods are more accessible and have better potential to be implemented even on mobile devices. We would try to improve the training model based on the findings of the state-of-the-art to come up with our own method, and evaluate the performance of it.We expect that our method can reach a high accuracy on the test set with an optimized speed. 
 
-\section{Related Work}
-Object detection, especially cars and pedestrains detecions for autonomous driving systems, has been a hot topic in computer vision for recent years. Convolutional Neural
+\section{Related work}
+
+[old]Object detection, especially cars and pedestrains detecions for autonomous driving systems, has been a hot topic in computer vision for recent years. Convolutional Neural
 Network(CNN or ConvNet)[6] is able to learn the features of the object and handle variations such as poses, viewpoints, and lightings, with high accuracy and high efficiency. However, it doesn't perform well when occlusion occurs, which is often the case in pedestrian and cyclists detection. 
 
-DeepParts[3] is a method to solve such problems, which consists of extensive strong part detectors to detect pedestrian by observing only a part
+[old]DeepParts[3] is a method to solve such problems, which consists of extensive strong part detectors to detect pedestrian by observing only a part
 of a proposal. It can be trained on weakly labeled
 data and performs very well on the task of pedestrain detection. 
 
-Recently, the Fully Convolutional Neural Network (FCN) based methods[5], with end-to-end approach of learning model parameters and image features, further improves the performance of object detection. DenseBox[4] is a unified end-to-end FCN that
+[old]Recently, the Fully Convolutional Neural Network (FCN) based methods[5], with end-to-end approach of learning model parameters and image features, further improves the performance of object detection. DenseBox[4] is a unified end-to-end FCN that
 directly predicts bounding boxes and object class confidences through all locations
 and scales of an image with great accuracy and efficiancy. It also incorporates with landmark localization during multi-task learning and further improves
 object detection accuracy. It has the best accuracy on car detection on KITTI by the time the proposal is finished. However, it has not been tested on the tasks of pedestrain or cyclists detection.
 
-Our method will be based on CNN and FCN, with some techniques to deal with occlusion and other issues. We will try to make it accurate on all of the three detection tasks. The performance of our methods will be compared with that of DeepParts and DenseBox.
+[old]Our method will be based on CNN and FCN, with some techniques to deal with occlusion and other issues. We will try to make it accurate on all of the three detection tasks. The performance of our methods will be compared with that of DeepParts and DenseBox.
 
+In many tasks, since the number of images and windows to evaluate is huge, we often rely on a weak classifier to get proposals for the more expensive classifier. Selective Search \cite{van2011segmentation} is a successful algorithm, which emphasize recall to include all image fragments of potential relevance. 
 
 \iffalse 
 
-\section{Submission of papers to NIPS 2015}
+\sectinnnnnon{Submission of papers to NIPS 2015}
 
 NIPS requires electronic submissions.  The electronic submission site is  
 \begin{center}
@@ -444,7 +446,11 @@ final paper.
 
 \fi 
 
-\subsubsection*{References}
+\bibliographystyle{IEEEtran}
+\bibliography{ref}
+
+
+\subsubsection*{Old References}
 
 \iffalse
 References follow the acknowledgments. Use unnumbered third level heading for
@@ -470,8 +476,8 @@ a ninth page as long as it contains \emph{only} cited references.}
 
 [7] P. Dollar, C. Wojek, B. Schiele, and P. Perona, “Pedestrian detection: A benchmark,” in 2009 IEEE Conference on Computer Vision and Pattern Recognition, 2009, pp. 304–311.
 
-%Other papers...
-
+[8] K. Sande, J. Uijlings, T. Gevers, and A. Smeulders, Segmentation as Selective Search for Object Recognition, in 2011 IEEE International Conference on Computer Vision, pp. 1879-1886.
+%Other paper
 
 \iffalse
 [1] Alexander, J.A. \& Mozer, M.C. (1995) Template-based algorithms
