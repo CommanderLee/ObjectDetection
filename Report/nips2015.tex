@@ -93,14 +93,14 @@ In many tasks, since the number of images and windows to evaluate is huge, we of
 
 \subsection{Data set}
 
-We use the KITTI data set for Object Detection \cite{Geiger2012CVPR}, which contains 7481 color images with ground truth bounding box labels, including 28782 cars and 4487 pedestrians. We partition the data set to a training set contains 5237 images(70\%), and a testing set contains 2244 images(30\%). Then we run different algorithms on the data set and analyze the results.
+We use the KITTI data set for Object Detection \cite{Geiger2012CVPR}, which contains $7481$ color images with ground truth bounding box labels, including $28782$ cars and $4487$ pedestrians. We partition the data set to a training set contains $5237$ images($70\%$), and a testing set contains $2244$ images($30\%$). Then we run different algorithms on the data set and analyze the results.
 
 \subsection{Pre-process: Selective Search}
 \label{sec:preprocess}
 
-First, we crop the cars and pedestrians from the images to generate the positive examples. We noticed that we have far more cars than pedestrians in the data set. To balance the difference, we multiply the pedestrian image set by adding a random bias to the color map (-20\% to +20\%) repeatedly. We also reverse the original image horizontally to make full use of the training set. Since the KITTI benchmark only evaluate objects larger than 25 pixels (height), we ignore these small objects in the training set. After all of these augmenting and filtering strategies, we have 22576 cars and 20960 pedestrians as positive examples for training.
+First, we crop the cars and pedestrians from the images to generate the positive examples. We noticed that we have far more cars than pedestrians in the data set. To balance the difference, we multiply the pedestrian image set by adding a random bias to the color map (from $-20\%$ to $+20\%$) repeatedly. We also reverse the original image horizontally to make full use of the training set. Since the KITTI benchmark only evaluate objects larger than $25$ pixels (height), we ignore these small objects in the training set. After all of these augmenting and filtering strategies, we have $22576$ cars and $20960$ pedestrians as positive examples for training.
 
-We use the Selective Search \cite{van2011segmentation} to generate the negative examples. We randomly select images from the training set, run Selective Search, and find out background segments, which have a 0\% to 30\% overlap with a positive example. We generate 20000 negative examples for training. 
+We use the Selective Search \cite{van2011segmentation} to generate the negative examples. We randomly select images from the training set, run Selective Search, and find out background segments, which have a $0\%$ to $30\%$ overlap with a positive example. We generate $20000$ negative examples for training. 
 
 \subsection{Object Detection Procedure}
 
@@ -124,7 +124,7 @@ The SVM classifier is trained using the cropped positive examples with ground tr
 
 \subsubsection{Validation}
 
-We use the k-fold (k=7) cross validation to evaluate our model, as required by the project guide (60\% training, 10\% validation, and 30\% testing). According to our description in Section \ref{sec:preprocess}, we multiply the data set by changing the contrast and brightness of the images, as well as reversing the images horizontally. Then we can compare the cross loss before and after the multiplication, using the \texttt{crossval} function from the MATLAB toolbox.
+We use the k-fold ($k=7$) cross validation to evaluate our model, as required by the project guide ($60\%$ training, $10\%$ validation, and $30\%$ testing). According to our description in Section \ref{sec:preprocess}, we multiply the data set by changing the contrast and brightness of the images, as well as reversing the images horizontally. Then we can compare the cross loss before and after the multiplication, using the \texttt{crossval} function from the MATLAB toolbox.
 
 \begin{figure}[htb]
 \begin{center}
@@ -132,15 +132,29 @@ We use the k-fold (k=7) cross validation to evaluate our model, as required by t
 \includegraphics[width=\textwidth]{crossloss.eps}
 %\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
 \end{center}
-\caption{Cross validation (k=7) loss before and after the image multiplication.
+\caption{Cross validation ($k=7$) loss before and after the image multiplication.
 \label{fig:crossloss}}
 \end{figure}
 
-We can observe from Figure \ref{fig:crossloss} that the cross loss gets lower when we multiply the data set from 13908 examples (11288 cars and 2620 pedestrians) to 43536 examples (22576 cars and 20960 pedestrians). With this trick, we can make full use of the limited data set when we lack certain classes of objects. On the other hand, this trick also helps to balance the different light conditions among the images by adding random brightness bias. 
+We can observe from Figure \ref{fig:crossloss} that the cross loss gets lower when we multiply the data set from $13908$ examples ($11288$ cars and $2620$ pedestrians) to $43536$ examples ($22576$ cars and $20960$ pedestrians). With this trick, we can make full use of the limited data set when we lack certain classes of objects. On the other hand, this trick also helps to balance the different light conditions among the images by adding random brightness bias. The final cross loss range from $2.75\%$ to $6.65\%$, which is satisfying. 
+
+In addition to the randomly selected negative examples ($N_1=20000$), we add retrain step to enhance the training procedure. Though the number of positive examples is limited by the training set, we can crop much more negative examples from the existing images. But we need to balance that with the training cost. To be more effective, we save the false positive image segments to files during the validation, and add these images to the training set, labeled as the background image. These are considered to be the hard examples ($N_2=10500$), so finally we have $30500$ negative examples.
 
 \subsubsection{Testing}
 
-First we can test on the cropped testing set to evaluate the object recognition performance. 
+First we can test on the cropped testing set to evaluate the object recognition performance. Similarly, we can compare the different accuracy, precision, and recall rate we got before the image multiplication and after the image multiplication. We use the \texttt{predict} function from the MATLAB toolbox to classify with our trained SVM models.
+
+\begin{figure}[htb]
+\begin{center}
+%\framebox[4.0in]{crossloss.eps}
+\includegraphics[width=\textwidth]{test_apr.eps}
+%\fbox{\rule[-.5cm]{0cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+\end{center}
+\caption{Accuracy, precision, and recall rate before and after the image multiplication.
+\label{fig:test_apr}}
+\end{figure}
+
+From Figure \ref{fig:test_apr}, we can conclude that multiplying images will also increase the accuracy, precision, and recall rate. Using $43536$ positive examples and $20000$ negative examples, we obtain a precision rate range from $92.96\%$ to $98.26\%$ and a recall rate range from $88.72\%$ to $96.56\%$. It is reasonable to consider that if we collect more training data or multiply more images with existing data, we will be able to get better performance. But that will also leads to more expensive training and testing cost. 
 
 \subsection{CNN}
 
