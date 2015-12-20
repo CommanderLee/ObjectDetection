@@ -15,7 +15,7 @@ assert(labelNum == imageNum);
 % assert(labelNum == outputNum);
 fprintf('Found %d images(labels).\n', labelNum);
 
-imageNum = 3;%For debug
+imageNum = 1;%For debug
 
 %% Start evaluation
 tic;
@@ -35,7 +35,8 @@ pedTP = 0;
 pedFP = 0;
 pedFN = 0;
 
-for i=1:imageNum
+% for i=1:imageNum
+for i=33:33
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
@@ -50,7 +51,7 @@ for i=1:imageNum
     
     % For each output objects
     for iOut = 1:outObjNum
-        if strcmp(outObjects(iOut).type, 'Car')
+        if strcmp(outObjects(iOut).type, 'Car') && outObjects(iOut).score > 1
             found = false;
             % Check each correct cars and vans
             for iCorr = 1:corrObjNum
@@ -68,7 +69,7 @@ for i=1:imageNum
                 % Claim a 'car' but actually not.
                 carFP = carFP + 1;
             end
-        elseif strcmp(outObjects(iOut).type, 'Pedestrian')
+        elseif strcmp(outObjects(iOut).type, 'Pedestrian') && outObjects(iOut).score > 1
             found = false;
             % Check each correct pedestrians and sitting persons
             for iCorr = 1:corrObjNum
@@ -86,8 +87,6 @@ for i=1:imageNum
                 % Claim a 'pedestrian' but actually not.
                 pedFP = pedFP + 1;
             end
-        else
-            fprintf('Error: wrong type name.\n');
         end
     end
     
