@@ -52,7 +52,17 @@ outputDir = 'E:/Code/ObjectDetection/new_data/test/output';
 
 fprintf('Found %d images.\n', imageNum);
 
-imageNum = 3;%For debug
+% imageNum = 1;%For debug
+
+% %% Start matlab pool
+% % Initialize Matlab Parallel Computing Enviornment by Xaero | Macro2.cn
+% % http://blog.sciencenet.cn/blog-419879-444784.html
+% CoreNum = 4;
+% if matlabpool('size')<=0 %判断并行计算环境是否已然启动
+%     matlabpool('open', 'local', CoreNum); %若尚未启动，则启动并行环境
+% else
+%     disp('Already initialized'); %说明并行环境已经启动。
+% end
 
 %% Set parameters & Load classifiers
 % Parameters. Note that this controls the number of hierarchical
@@ -66,11 +76,10 @@ simFunctionHandles = simFunctionHandles(1:2); % Two different merging strategies
 
 % Thresholds for the Felzenszwalb and Huttenlocher segmentation algorithm.
 % Note that by default, we set minSize = k, and sigma = 0.8.
-k = 200; % controls size of segments of initial segmentation. 
-minSize = k;
+k = 100; % controls size of segments of initial segmentation. 
+minSize = 25;
 sigma = 0.8;
 
-fpDir = 'E:/Code/ObjectDetection/crop/false_positive';
 % Minium bounding box height that we consider. 
 % Ref: Readme file from development kit
 minObjHeight = 25;
@@ -87,13 +96,16 @@ imageSize = [64 64];
 tic;
 fprintf('Start testing.\n');
 
-for i=1:imageNum
+% parpool('local',2)
+% for i=1:imageNum
+for i=30:33
     im = imread(sprintf('%s/%06d.png', imageDir, i-1));
 
     % Perform Selective Search
     [boxes blobIndIm blobBoxes hierarchy] = Image2HierarchicalGrouping(im, sigma, k, minSize, colorType, simFunctionHandles);
     boxes = BoxRemoveDuplicates(boxes);
-    boxNum = min(size(boxes, 1), 30);
+    boxNum = min(size(boxes, 1), 1000);
+    im = rgb2gray(im);
     
     objIndex = 1;
     objects = [];
@@ -119,16 +131,24 @@ for i=1:imageNum
                     objects(objIndex).type  = 'Pedestrian';
                     pedNum = pedNum + 1;
                 end
-                objects(objIndex).score = score(1);
-                
+                objects(objIndex).score = abs(score(1));
+%                 if scoreCar(1) > scorePed(1)
+%                     objects(objIndex).type  = 'Car';
+%                     carNum = carNum + 1;
+%                     objects(objIndex).score = scoreCar(1);
+%                 else
+%                     objects(objIndex).type  = 'Pedestrian';
+%                     pedNum = pedNum + 1;
+%                     objects(objIndex).score = scorePed(1);
+%                 end
             elseif predictLabelCar(1) == 1 && predictLabelPed(1) == 0
                 objects(objIndex).type  = 'Car';
-                objects(objIndex).score = scoreCar(1);
+                objects(objIndex).score = abs(scoreCar(1));
                 carNum = carNum + 1;
                 
             elseif predictLabelCar(1) == 0 && predictLabelPed(1) == 1
                 objects(objIndex).type  = 'Pedestrian';
-                objects(objIndex).score = scorePed(1);
+                objects(objIndex).score = abs(scorePed(1));
                 pedNum = pedNum + 1;
             end
             
@@ -148,3 +168,6 @@ for i=1:imageNum
     fprintf('%06d: Find %d cars and %d pedestrians.\n', i-1, carNum, pedNum);
 end
 fprintf('Complete! Used %f seconds.\n', toc);
+%% Close matlab pool
+% matlabpool close;
+% delete(gcp)
