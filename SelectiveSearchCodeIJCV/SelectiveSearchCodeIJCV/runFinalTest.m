@@ -77,12 +77,17 @@ simFunctionHandles = simFunctionHandles(1:2); % Two different merging strategies
 % Thresholds for the Felzenszwalb and Huttenlocher segmentation algorithm.
 % Note that by default, we set minSize = k, and sigma = 0.8.
 k = 100; % controls size of segments of initial segmentation. 
-minSize = 25;
-sigma = 0.8;
+minSize = 30;
+sigma = 0.7;
 
 % Minium bounding box height that we consider. 
 % Ref: Readme file from development kit
-minObjHeight = 25;
+minObjHeight = 30;
+
+% Set ratio threshold width/height
+% CarRatio: mean:1.720363 sigma:0.600885, PedestrianRatio: mean:0.401079 sigma:0.111491.
+carRatio = [0.4 3.5];
+pedRatio = [0.1 0.8];
 
 rng(1);
 
@@ -98,7 +103,7 @@ fprintf('Start testing.\n');
 
 % parpool('local',2)
 % for i=1:imageNum
-for i=30:33
+for i=42:42
     im = imread(sprintf('%s/%06d.png', imageDir, i-1));
 
     % Perform Selective Search
@@ -115,23 +120,40 @@ for i=30:33
     for b = 1:boxNum
         currBox = boxes(b, :);
         if currBox(3) - currBox(1) > minObjHeight
-            cropped = imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]);
-            feature = extractHOGFeatures(imresize(cropped, imageSize), 'CellSize', cellSize);
+            aspectRatio = (currBox(4)-currBox(2)) / (currBox(3)-currBox(1));
+            carOK = false;
+            pedOK = false;
+            if aspectRatio > carRatio(1) && aspectRatio < carRatio(2)
+                carOK = true;
+            end
+            if aspectRatio > pedRatio(1) && aspectRatio < pedRatio(2)
+                pedOK = true;
+            end
             
-            % Test with classifiers
-            [predictLabelCar, scoreCar] = predict(SVMModelCar, feature);
-            [predictLabelPed, scorePed] = predict(SVMModelPed, feature);
+            if carOK || pedOK
+                cropped = imcrop(im, [currBox(2), currBox(1), currBox(4)-currBox(2), currBox(3)-currBox(1)]);
+                feature = extractHOGFeatures(imresize(cropped, imageSize), 'CellSize', cellSize);
 
-            if predictLabelCar(1) == 1 && predictLabelPed(1) == 1
+                % Test with classifiers
+                if carOK
+                    [predictLabelCar, scoreCar] = predict(SVMModelCar, feature);
+                end
+                if pedOK
+                    [predictLabelPed, scorePed] = predict(SVMModelPed, feature);
+                end
+            end
+            
+            if carOK && pedOK && predictLabelCar(1) == 1 && predictLabelPed(1) == 1
                 [predictLabel, score] = predict(SVMModelCarPed, feature);
                 if predictLabel(1) == 1
                     objects(objIndex).type  = 'Car';
                     carNum = carNum + 1;
-                else
+                    objects(objIndex).score = abs(score(1));
+                elseif predictLabel(1) == 0
                     objects(objIndex).type  = 'Pedestrian';
                     pedNum = pedNum + 1;
+                    objects(objIndex).score = abs(score(1));
                 end
-                objects(objIndex).score = abs(score(1));
 %                 if scoreCar(1) > scorePed(1)
 %                     objects(objIndex).type  = 'Car';
 %                     carNum = carNum + 1;
@@ -141,19 +163,19 @@ for i=30:33
 %                     pedNum = pedNum + 1;
 %                     objects(objIndex).score = scorePed(1);
 %                 end
-            elseif predictLabelCar(1) == 1 && predictLabelPed(1) == 0
+            elseif carOK && predictLabelCar(1) == 1 && (~pedOK || predictLabelPed(1) == 0)
                 objects(objIndex).type  = 'Car';
                 objects(objIndex).score = abs(scoreCar(1));
                 carNum = carNum + 1;
                 
-            elseif predictLabelCar(1) == 0 && predictLabelPed(1) == 1
+            elseif pedOK && predictLabelPed(1) == 1 && (~carOK || predictLabelCar(1) == 0)
                 objects(objIndex).type  = 'Pedestrian';
                 objects(objIndex).score = abs(scorePed(1));
                 pedNum = pedNum + 1;
             end
             
             % Find something
-            if predictLabelCar(1) + predictLabelPed(1) >= 1
+            if (carOK && predictLabelCar(1)) || (pedOK && predictLabelPed(1))
                 objects(objIndex).x1    = currBox(2);
                 objects(objIndex).y1    = currBox(1);
                 objects(objIndex).x2    = currBox(4);

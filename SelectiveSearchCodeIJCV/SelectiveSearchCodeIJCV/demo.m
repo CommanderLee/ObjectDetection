@@ -55,7 +55,7 @@ sigma = 0.8;
 
 % As an example, use a single image
 % images = {'000015.jpg'};
-images = {'E:/Code/ObjectDetection/new_data/test/image/000015.png', '000178.png'};
+images = {'E:/Code/ObjectDetection/new_data/test/image/000044.png', '000178.png'};
 im = imread(images{1});
 
 % Perform Selective Search

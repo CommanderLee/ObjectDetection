@@ -28,11 +28,10 @@ pedTh = 0.5;
 % Ref: Readme file from development kit
 minObjHeight = 25;
 
-tic;
 fprintf('Start drawing.\n');
 
 % for i=1:imageNum
-for i=31:33
+for i=40:50
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
@@ -51,7 +50,7 @@ for i=31:33
     
     % For each output objects
     for iOut = 1:outObjNum
-        if strcmp(outObjects(iOut).type, 'Car') && abs(outObjects(iOut).score) > 1
+        if strcmp(outObjects(iOut).type, 'Car') %&& abs(outObjects(iOut).score) > 1
             found = false;
             % Check each correct cars and vans
             for iCorr = 1:corrObjNum
@@ -68,7 +67,7 @@ for i=31:33
             % Draw a car:
             outRect = [outRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
                 outObjects(iOut).x2-outObjects(iOut).x1, outObjects(iOut).y2-outObjects(iOut).y1];
-        elseif strcmp(outObjects(iOut).type, 'Pedestrian') && abs(outObjects(iOut).score) > 1
+        elseif strcmp(outObjects(iOut).type, 'Pedestrian') %&& abs(outObjects(iOut).score) > 1
             found = false;
             % Check each correct pedestrians and sitting persons
             for iCorr = 1:corrObjNum
@@ -103,12 +102,16 @@ for i=31:33
         end
     end
     
-    shapeInserter = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([255 0 0]), 'LineWidth', 2); 
-    J = step(shapeInserter, im, int32(outRect));
-    shapeInserter2 = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([0 255 0]), 'LineWidth', 4); 
-    K = step(shapeInserter2, J, int32(corrRect));
-    currFig = imshow(K); 
-    waitfor(currFig);
+    if size(corrRect, 1) > 0
+        shapeInserter = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([0 255 0]), 'LineWidth', 4);
+        J = step(shapeInserter, im, int32(corrRect));
+        if size(outRect, 1) > 0
+            shapeInserter2 = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([255 0 0]), 'LineWidth', 2);
+            K = step(shapeInserter2, J, int32(outRect));
+            currFig = imshow(K);
+        else
+            currFig = imshow(J);
+        end
+        waitfor(currFig);
+    end
 end
-fprintf('Finished. Used %f seconds.\n', toc);
-

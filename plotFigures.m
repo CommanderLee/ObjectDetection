@@ -13,9 +13,9 @@ plot(x, y2, 'b*--', 'LineWidth', 3);
 
 legend('Before Multiplication', 'After Multiplication', 'Location', 'northeast');
 
-strValuesA = strtrim(cellstr(num2str([y1(:) * 100],'%.2f\%')));
+strValuesA = strtrim(cellstr(num2str([y1(:) * 100],'%.2f')));
 text(x, y1, strValuesA, 'Color', 'red', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-strValuesP = strtrim(cellstr(num2str([y2(:) * 100],'%.2f\%')));
+strValuesP = strtrim(cellstr(num2str([y2(:) * 100],'%.2f')));
 text(x, y2, strValuesP, 'Color', 'blue', 'FontSize', 12, 'VerticalAlignment', 'top', 'HorizontalAlignment', 'center');
 
 set(gca, 'xtick', 1:3, 'xticklabel', xLabel);
@@ -55,11 +55,11 @@ plot(x, r1, 'gx:', 'LineWidth', 3);
 
 legend('Accuracy', 'Precision', 'Recall', 'Location', 'southeast');
 
-strValuesA = strtrim(cellstr(num2str([a1(:) * 100],'%.2f\%')));
+strValuesA = strtrim(cellstr(num2str([a1(:) * 100],'%.2f')));
 text(x, a1, strValuesA, 'Color', 'red', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-strValuesP = strtrim(cellstr(num2str([p1(:) * 100],'%.2f\%')));
+strValuesP = strtrim(cellstr(num2str([p1(:) * 100],'%.2f')));
 text(x, p1, strValuesP, 'Color', 'blue', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-strValuesR = strtrim(cellstr(num2str([r1(:) * 100],'%.2f\%')));
+strValuesR = strtrim(cellstr(num2str([r1(:) * 100],'%.2f')));
 text(x, r1, strValuesR, 'Color', 'green', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 
 set(gca, 'xtick', 1:3, 'xticklabel', xLabel);
@@ -72,6 +72,7 @@ pct = char(ones(size(a,1),1)*'%');
 new_yticks = [char(a),pct];
 % 'Reflect the changes on the plot
 set(gca,'yticklabel',new_yticks);
+title('Before multiplication');
 
 subplot(1, 2, 2);
 hold on;
@@ -83,11 +84,11 @@ plot(x, r2, 'gx:', 'LineWidth', 3);
 
 legend('Accuracy', 'Precision', 'Recall', 'Location', 'southeast');
 
-strValuesA = strtrim(cellstr(num2str([a2(:) * 100],'%.2f\%')));
+strValuesA = strtrim(cellstr(num2str([a2(:) * 100],'%.2f')));
 text(x, a2, strValuesA, 'Color', 'red', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-strValuesP = strtrim(cellstr(num2str([p2(:) * 100],'%.2f\%')));
+strValuesP = strtrim(cellstr(num2str([p2(:) * 100],'%.2f')));
 text(x, p2, strValuesP, 'Color', 'blue', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
-strValuesR = strtrim(cellstr(num2str([r2(:) * 100],'%.2f\%')));
+strValuesR = strtrim(cellstr(num2str([r2(:) * 100],'%.2f')));
 text(x, r2, strValuesR, 'Color', 'green', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 
 set(gca, 'xtick', 1:3, 'xticklabel', xLabel);
@@ -100,3 +101,4 @@ pct = char(ones(size(a,1),1)*'%');
 new_yticks = [char(a),pct];
 % 'Reflect the changes on the plot
 set(gca,'yticklabel',new_yticks);
+title('After multiplication');

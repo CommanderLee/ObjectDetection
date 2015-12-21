@@ -26,6 +26,11 @@ fprintf('Start comparing results.\n');
 carTh = 0.7;
 pedTh = 0.5;
 
+% Minium bounding box height that we consider. 
+% Ref: Readme file from development kit
+minObjHeight = 25;
+minCarWidth = 30;
+
 % Initialize the True Positive, False Positive, False Negative
 carTP = 0;
 carFP = 0;
@@ -36,7 +41,7 @@ pedFP = 0;
 pedFN = 0;
 
 % for i=1:imageNum
-for i=33:33
+for i=44:50
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
@@ -51,7 +56,7 @@ for i=33:33
     
     % For each output objects
     for iOut = 1:outObjNum
-        if strcmp(outObjects(iOut).type, 'Car') && outObjects(iOut).score > 1
+        if strcmp(outObjects(iOut).type, 'Car') %&& outObjects(iOut).score > 0.5 && outObjects(iOut).x2-outObjects(iOut).x1 > minCarWidth
             found = false;
             % Check each correct cars and vans
             for iCorr = 1:corrObjNum
@@ -69,7 +74,7 @@ for i=33:33
                 % Claim a 'car' but actually not.
                 carFP = carFP + 1;
             end
-        elseif strcmp(outObjects(iOut).type, 'Pedestrian') && outObjects(iOut).score > 1
+        elseif strcmp(outObjects(iOut).type, 'Pedestrian') %&& outObjects(iOut).score > 0.5
             found = false;
             % Check each correct pedestrians and sitting persons
             for iCorr = 1:corrObjNum
@@ -99,7 +104,7 @@ for i=33:33
            elseif strcmp(corrObjects(iCorr).type, 'Pedestrian') || strcmp(corrObjects(iCorr).type, 'Person_sitting')
                pedTP = pedTP + 1;
            end
-       else
+       elseif corrObjects(iCorr).y2 - corrObjects(iCorr).y1 >= minObjHeight
            % FN:
            if strcmp(corrObjects(iCorr).type, 'Car')
                carFN = carFN + 1;
