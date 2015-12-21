@@ -38,16 +38,19 @@ fprintf('Car:%d, Pedestrian:%d, Van:%d, Sitting:%d\n', cars, pedestrians, vans, 
 % CarRatio: mean:1.720363 sigma:0.600885, PedestrianRatio: mean:0.401079 sigma:0.111491.
 fprintf('CarRatio: mean:%f sigma:%f, PedestrianRatio: mean:%f sigma:%f.\n', ...
     mean(carRatio), sqrt(var(carRatio)), mean(pedRatio), sqrt(var(pedRatio)));
+x = 0:0.2:5;
 subplot(1, 2, 1);
-hist(carRatio, 0:0.2:5);
-% newValues = hCar / sum(hCar);
-% x = 0:0.01:5;
-% mu = mean(carRatio);
-% sigma = sqrt(var(carRatio));
-% f = exp(-(x-mu).^2./(2*sigma^2))./(sigma*sqrt(2*pi));
-% plot(x, f, 'r', 'LineWidth',1.5);
+hCar = hist(carRatio, x);
+newValuesC = hCar / sum(hCar);
+bar(x, newValuesC, 'style', 'histc');
+xlim([0 4.4]);
+ylim([0 0.8]);
 title('Cars');
 
 subplot(1, 2, 2);
-hist(pedRatio, 0:0.2:2);
+hPed = hist(pedRatio, x);
+newValuesP = hPed / sum(hPed);
+bar(x, newValuesP, 'style', 'histc');
+xlim([0 4.4]);
+ylim([0 0.8]);
 title('Pedestrians');
