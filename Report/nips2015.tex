@@ -4,6 +4,7 @@
 \usepackage{url}
 \usepackage{enumerate}
 \usepackage{graphicx} 
+\usepackage{subfigure}
 %\documentstyle[nips14submit_09,times,art10]{article} % For LaTeX 2.09
 
 
@@ -54,40 +55,76 @@ paragraph.
 
 \section{Introduction}
 
-Autonomous driving is one of the most challenging topic in Computer Vision as well as Machine Learning. The goal of this project is to detect the cars and pedestrians in the given images, locating the 2D bounding boxes of the objects correctly. Such detection techniques would make vision-based autonomous driving systems more robust and accurate, hence increasing the possibility of adopting them in the real life. 
+Object detection has always been one of the core problems of Computer Vision and Machine Learning. Based on object detection, autonomous driving is the most challenging topic in this field which has a great impact on our life. The goal of this project is to detect the cars and pedestrians in the real road images, and locate the 2D bounding boxes of the objects correctly. Such detection techniques would make vision-based autonomous driving systems more robust and accurate, hence increasing the possibility of adopting them in the real life. 
 
-It is hard to apply classical machine learning techniques on this topic directly. For example, we have learnt several object recognition algorithms which perform very well on MNIST \cite{lecun1998gradient} Database. However, the real road image has more occlution,  
+It is hard to apply classical machine learning techniques on this topic directly. Compared with the traditional object recognition database, for example, the MNIST \cite{lecun1998gradient} Database, the real road images have more occlusions, more complicated background textures, and as a result, objects from the real road images are harder to detect. 
 
-The basic idea of this project came from The KITTI Vision Benchmark Suite \cite{Geiger2012CVPR} 
+The basic idea of this project came from The KITTI Vision Benchmark Suite \cite{Geiger2012CVPR}. It provides a well labeled training set containing $7481$ color images. Inspired by the ranking of different methods on the KITTI website, we would try to implement those with very good performance and without using other sensor data, for the reason that such methods are more accessible and have better potential to be implemented even on mobile devices. We would try to improve the training model based on the findings of the state-of-the-art to come up with our own method, and evaluate the performance of it. We expect that our method can reach a high accuracy on the test set with an optimized speed. 
 
-In this project, we focus on the performance of SVM, CNN, and boosting techniques as well as their differences. Our code is available on GitHub\footnote{https://github.com/CommanderLee/ObjectDetection}.
+In this project, we focus on the performance of SVM, Regionlets \cite{Wang2013}, and CNN techniques as well as their differences. Our code is available on GitHub\footnote{https://github.com/CommanderLee/ObjectDetection}.
 
-[old]The basic idea of this project came from The KITTI Vision Benchmark Suite [2]. According to the website, an overlap of 70\% is required for a detection of a car, while an overlap of 50\% is required for the pedestrians.
+% Other old paragraph moved to conclusion section
 
-[old]To achieve our goals, we will download the left color images of object, camera calibration and training
-labels data from \texttt{http://www.cvlibs.net/datasets/kitti/eval\_object.php}, as well as the development kit, upon which we will train the model and evaluate our methods. The labeled training data will be splitted into training, validation, and testing, which takes 60\%, 10\% and 30\% respectively. Besides KITTI, we would also use some other datasets to test our methods, especially on pedestrain detection, including Caltech Pedestrian Detection Benchmark[7] and Daimler Pedestrian Segmentation Benchmark Dataset[1].
+\section{Related Work}
 
-[old]Inspired by the ranking of different methods on the KITTI website, we would try to implement those with very good performence and without using other sensor data, for the reason that such methods are more accessible and have better potential to be implemented even on mobile devices. We would try to improve the training model based on the findings of the state-of-the-art to come up with our own method, and evaluate the performance of it.We expect that our method can reach a high accuracy on the test set with an optimized speed. 
+Object detection, especially cars and pedestrains detecions for autonomous driving systems, has been a hot topic in computer vision for recent years. In many tasks, since the number of images and windows to evaluate is huge, we often rely on a weak classifier to get proposals for the more expensive classifier. Selective Search \cite{van2011segmentation} is a successful algorithm, which emphasize recall to include all image fragments of potential relevance. It can be combined with many feature representation techniques, such as the histograms of oriented gradients (HOG) \cite{dalal2005histograms}, and SIFT \cite{lowe2004distinctive}. 
 
-\section{Related work}
+[TODO: introduce regionlets]
 
-[old]Object detection, especially cars and pedestrains detecions for autonomous driving systems, has been a hot topic in computer vision for recent years. Convolutional Neural
-Network(CNN or ConvNet)[6] is able to learn the features of the object and handle variations such as poses, viewpoints, and lightings, with high accuracy and high efficiency. However, it doesn't perform well when occlusion occurs, which is often the case in pedestrian and cyclists detection. 
+Convolutional Neural
+Network (CNN or ConvNet) \cite{Krizhevsky2012} is able to learn the features of the object and handle variations such as poses, viewpoints, and lightings, with high accuracy and high efficiency. However, it doesn't perform well when occlusion occurs, which is often the case in pedestrian and cyclists detection. 
 
-[old]DeepParts[3] is a method to solve such problems, which consists of extensive strong part detectors to detect pedestrian by observing only a part
-of a proposal. It can be trained on weakly labeled
-data and performs very well on the task of pedestrain detection. 
-
-[old]Recently, the Fully Convolutional Neural Network (FCN) based methods[5], with end-to-end approach of learning model parameters and image features, further improves the performance of object detection. DenseBox[4] is a unified end-to-end FCN that
+Recently, the Fully Convolutional Neural Network (FCN) based methods[5], with end-to-end approach of learning model parameters and image features, further improves the performance of object detection. DenseBox \cite{Huang2015} is a unified end-to-end FCN that
 directly predicts bounding boxes and object class confidences through all locations
 and scales of an image with great accuracy and efficiancy. It also incorporates with landmark localization during multi-task learning and further improves
 object detection accuracy. It has the best accuracy on car detection on KITTI by the time the proposal is finished. However, it has not been tested on the tasks of pedestrain or cyclists detection.
 
-[old]Our method will be based on CNN and FCN, with some techniques to deal with occlusion and other issues. We will try to make it accurate on all of the three detection tasks. The performance of our methods will be compared with that of DeepParts and DenseBox.
+Felzenszwalb et al \cite{felzenszwalb2010object} combined a margin-sensitive approach for data-mining hard negative samples, which can be used by iteratively adding hard negative examples (false positive errors) \cite{van2011segmentation}.
 
-In many tasks, since the number of images and windows to evaluate is huge, we often rely on a weak classifier to get proposals for the more expensive classifier. Selective Search \cite{van2011segmentation} is a successful algorithm, which emphasize recall to include all image fragments of potential relevance. 
 
 \section{Methods}
+
+\subsection{Object Detection System}
+
+\begin{figure}[htb]
+\begin{subfigure}
+    \centering
+    \includegraphics[width=.9\linewidth]{pipeline1.png}
+    \label{fig:pipeline1}
+\end{subfigure}
+\begin{subfigure}
+    \centering
+    \includegraphics[width=.9\linewidth]{pipeline2.png}
+    \label{fig:pipeline2}
+\end{subfigure}
+\caption{Top: The pipeline for training procedure. Bottom: The pipeline for testing procedure.
+\label{fig:pipeline}}
+\end{figure}
+
+The whole architecture of our detection system is illustrated in Figure \ref{fig:pipeline}. In the training procedure, cropped images with ground truth labels are utilized to train the initial model. After validation, false positive errors are added to the negative samples, which iteratively focus on harder examples. 
+
+In the testing procedure, there are mainly two steps in our detection procedure: 
+\begin{enumerate}[Step 1]
+    \item Weak classifier: Generate proposals and save the bounding box.
+    \item Strong classifier: Find out cars and pedestrians, and save the results.
+\end{enumerate}
+
+We use the Selective Search \cite{van2011segmentation} as the common weak classifier. For the strong classifier after it, we use SVM, Regionlets, and CNN.
+
+\subsection{Ground Truth Generation}
+\label{sec:positive}
+
+In training, image segments of cars and pedestrians are cropped and resized to $64 \times 64$, according to the corresponding labels. Then we adjust the original image by adding a random bias to the histogram map (from $-20\%$ to $+20\%$) repeatedly. We also reverse the original image horizontally to make full use of the training set. This adjustment will not only balance the different light conditions in the original images, but also make full use of the hidden information. 
+
+\subsection{Negative Samples Generation}
+
+We use the Selective Search \cite{van2011segmentation} to generate the negative samples. Selective Search is a segmentation algorithm that focus on recall rate and ensure its results do not stem from parameter tuning. It starts from initial regions generated by \cite{felzenszwalb2004efficient}, and use a greedy algorithm to repeatedly merge similar segments. The similarity function is defined to combine the size similarity, by calculating the fraction of joint area, and the texture similarity, by calculating the histogram intersection.
+
+We randomly select images from the training set, run Selective Search, and find out background segments, which are definded to have a $0\%$ to $30\%$ overlap with a positive sample (car or pedestrian). We generate $20000$ negative samples for training. 
+
+\subsection{Retrain Procedure}
+
+Generating the negative samples is a important part of road object detection, since the background textures are too complicated to cluster easily. Too enhance the model's ability to solve hard problems, we add retrain procedure \cite{felzenszwalb2010object} to iteratively adding false positive errors to the negative sample set.
 
 \section{Experiments}
 
@@ -95,36 +132,53 @@ In many tasks, since the number of images and windows to evaluate is huge, we of
 
 We use the KITTI data set for Object Detection \cite{Geiger2012CVPR}, which contains $7481$ color images with ground truth bounding box labels, including $28782$ cars and $4487$ pedestrians. We partition the data set to a training set contains $5237$ images($70\%$), and a testing set contains $2244$ images($30\%$). Then we run different algorithms on the data set and analyze the results.
 
-\subsection{Pre-process: Selective Search}
-\label{sec:preprocess}
-
-First, we crop the cars and pedestrians from the images to generate the positive examples. We noticed that we have far more cars than pedestrians in the data set. To balance the difference, we multiply the pedestrian image set by adding a random bias to the color map (from $-20\%$ to $+20\%$) repeatedly. We also reverse the original image horizontally to make full use of the training set. Since the KITTI benchmark only evaluate objects larger than $25$ pixels (height), we ignore these small objects in the training set. After all of these augmenting and filtering strategies, we have $22576$ cars and $20960$ pedestrians as positive examples for training.
-
-We use the Selective Search \cite{van2011segmentation} to generate the negative examples. We randomly select images from the training set, run Selective Search, and find out background segments, which have a $0\%$ to $30\%$ overlap with a positive example. We generate $20000$ negative examples for training. 
-
-\subsection{Object Detection Procedure}
-
-There are mainly two steps in our detection procedure: 
-\begin{enumerate}[Step 1]
-    \item Weak classifier: Generate proposals and save the bounding box.
-    \item Strong classifier: Find out cars and pedestrians, and save the results.
-\end{enumerate}
-
-We use the Selective Search \cite{van2011segmentation} as the common weak classifier. For the strong classifier after it, we tried SVM, Regionlets, and CNN.
-
 \subsection{Regionlets}
 
-blablabla
+TODO: modify format, add subsection title, add reference(I have add the ref.bib file, so we can use the auto-ref now), and change math font
+
+Regionlets with Adaboost for generic object detection
+ 
+To try some different features as well as different classifiers, we implemented regionlets for generic object detection [] to compare with the SVM classifier. We also use selective search to get candidate bounding boxes which may contain target object, and classify the candidate boxes with the learned classifier.
+ 
+Regionlets
+ 
+Regionlet defination
+Regionlets are defined as sub-parts of a region in the image. They are introduced to act as basic units to extract appearance features, and are organized into small groups to describe features with different degrees of deformation. In this way, features extracted from small regions and a big region can work together, which can provide a good localization ability as well as tolerate more variations.
+Figure [] shows the definition of regionlets. The outer black rectangle is a candidate bounding box. The blue rectangle inside the bounding box is a feature extraction region denoted as R, which will contribute a weak classifier to the boosting classifier. Within the region R, some small sub-regions are selected and defined as a group of regionlets, as shown in Figure []. The features of these regionlets will be aggregated to a single feature for a region R during training, and a bounding box will be represented by a number of such regions.
+By introducing regionlets, it is straightforward to think that it would improve object recognition especially for occluded situations, which are common in automated driving, because the discerning features are extracted while irrelevant appearance from background is largely discarded. Besides, more regionlets in a single region R will increase the capacity to model deformations.
+ 
+Region feature extraction
+According to [], feature extraction from R takes 2 steps. First, we extract appearance features of HOG descriptors from each regionlets respectively. Second, we generate the representation of R based on regionlet’s features. We apply max-pooling over regionlet features for the feture of region R. Denote T(R) as the feature representation for region R, T(rj) as the feature extracted from the jth regionlet rj in R, then the operation is defined as follows:
+T(R) = max T(rj)
+The max-pooling happens for each feature dimension independently. For each regionlet, we first extract HOG feature for the regionlet. Then we pick a 1D feature from the same dimension of HOG feature in each regionlet and apply max-pooling to get the feature for region R. We have millions of such 1D features in a detection window and the most discriminative ones are determined through a boosting learning process.
+ 
+Leaning the object detection model
+We use the ensamble method of boosting to learn the discriminative regionlet groups and their configurations from a huge pool of candidate regions and regionlets.
+ 
+Regionlets pool construction
+To deal with deformation at different scales, we first build a largely over-complete pool for regions and regionlets with various positions, aspect ratios and sizes. 
+we denote the 1D feature of a region relative to a bounding box as R’= (l’, t’, r’, b’, k), where k denotes the kth element of the low-level feature vector of the region. The region pool is spanned by X × Y × W × H × F, where X and Y are respectively the space of horizontal and vertical anchor position of R in the detection window, W and H are the width and height of the feature extraction region R’, and F is the space of HOG feature. Enumerating all possible regions is impractical and not necessary. We employ a sampling process to reduce the pool size. The algorithm is the same as Algorithm 1 in [].
+ 
+After getting the region pool, we propose a set of regionlets with random positions inside each region. Although the sizes of regionlets in a region could be arbitrary in general, we restrict regionlets in a group to have the identical size because our regionlets are designed to capture the same appearance in different possible locations due to deformation. The sizes of regionlets in different groups could be different. A region may contain up to 5 regionlets in our implementation.
+ 
+The final feature space used as the feature pool for boosting is spanned by R × C, where R is the region feature prototype space and C is the configuration space of regtionlets.
+ 
+Training with boosting regionlet features
+ 
+We use Gentle Adaboost[] to train classifiers for our object detector. One boosting classifier consists of a set of selected weak classifers. We define the weak classifier as a decision tree. Gentle Adaboost puts less weight on outlier data points, which would make the classifiers more robust.
+
 
 \subsection{SVM}
 
 \subsubsection{Training}
 
-The SVM classifier is trained using the cropped positive examples with ground truth labels, and negative background segments generated by the Selective Search. Since SVM is a binary classifier, we trained 3 classifiers: (1) Car vs All, (2) Pedestrian vs All, and (3) Car vs Pedestrian. We use the \texttt{fitcsvm} function from the MATLAB toolbox.
+We noticed that there are far more cars than pedestrians in the KITTI data set. To balance the difference, the multiplication trick in Section \ref{sec:positive} can be used to increase the number of pedestrians, which make better use of the training set. In addition, since the KITTI benchmark only evaluate objects larger than $25$ pixels (height), we ignore these small objects in the training set. After all of these augmenting and filtering strategies, we have $22576$ cars and $20960$ pedestrians as positive samples for training.
+
+The SVM classifier is trained using the cropped positive samples with ground truth labels, and negative background segments generated by the Selective Search. Since SVM is a binary classifier, we trained 3 classifiers: (1) Car vs All, (2) Pedestrian vs All, and (3) Car vs Pedestrian. We use the \texttt{fitcsvm} function from the MATLAB toolbox to train out model.
 
 \subsubsection{Validation}
 
-We use the k-fold ($k=7$) cross validation to evaluate our model, as required by the project guide ($60\%$ training, $10\%$ validation, and $30\%$ testing). According to our description in Section \ref{sec:preprocess}, we multiply the data set by changing the contrast and brightness of the images, as well as reversing the images horizontally. Then we can compare the cross loss before and after the multiplication, using the \texttt{crossval} function from the MATLAB toolbox.
+We use the k-fold ($k=7$) cross validation to evaluate our model, as required by the project guide ($60\%$ training, $10\%$ validation, and $30\%$ testing). According to our description in Section \ref{sec:positive}, we multiply the data set by changing the contrast and brightness of the images, as well as reversing the images horizontally. Then we can compare the cross loss before and after the multiplication, using the \texttt{crossval} function from the MATLAB toolbox.
 
 \begin{figure}[htb]
 \begin{center}
@@ -136,9 +190,9 @@ We use the k-fold ($k=7$) cross validation to evaluate our model, as required by
 \label{fig:crossloss}}
 \end{figure}
 
-We can observe from Figure \ref{fig:crossloss} that the cross loss gets lower when we multiply the data set from $13908$ examples ($11288$ cars and $2620$ pedestrians) to $43536$ examples ($22576$ cars and $20960$ pedestrians). With this trick, we can make full use of the limited data set when we lack certain classes of objects. On the other hand, this trick also helps to balance the different light conditions among the images by adding random brightness bias. The final cross loss range from $2.75\%$ to $6.65\%$, which is satisfying. 
+We can observe from Figure \ref{fig:crossloss} that the cross loss gets lower when we multiply the data set from $13908$ samples ($11288$ cars and $2620$ pedestrians) to $43536$ samples ($22576$ cars and $20960$ pedestrians). With this trick, we can make full use of the limited data set when we lack certain classes of objects. On the other hand, this trick also helps to balance the different light conditions among the images by adding random brightness bias. The final cross loss range from $2.75\%$ to $6.65\%$, which is satisfying. 
 
-In addition to the randomly selected negative examples ($N_1=20000$), we add retrain step to enhance the training procedure. Though the number of positive examples is limited by the training set, we can crop much more negative examples from the existing images. But we need to balance that with the training cost. To be more effective, we save the false positive image segments to files during the validation, and add these images to the training set, labeled as the background image. These are considered to be the hard examples ($N_2=10500$), so finally we have $30500$ negative examples.
+In addition to the randomly selected negative samples ($N_1=20000$), we add retrain step to enhance the training procedure. Though the number of positive samples is limited by the training set, we can crop much more negative samples from the existing images. But we need to balance that with the training cost. To be more effective, we save the false positive image segments to files during the validation, and add these images to the training set, labeled as the background image. These are considered to be the hard samples ($N_2=10500$), so finally we have $30500$ negative samples.
 
 \subsubsection{Testing}
 
@@ -154,13 +208,36 @@ First we can test on the cropped testing set to evaluate the object recognition 
 \label{fig:test_apr}}
 \end{figure}
 
-From Figure \ref{fig:test_apr}, we can conclude that multiplying images will also increase the accuracy, precision, and recall rate. Using $43536$ positive examples and $20000$ negative examples, we obtain a precision rate range from $92.96\%$ to $98.26\%$ and a recall rate range from $88.72\%$ to $96.56\%$. It is reasonable to consider that if we collect more training data or multiply more images with existing data, we will be able to get better performance. But that will also leads to more expensive training and testing cost. 
+From Figure \ref{fig:test_apr}, we can conclude that multiplying images will also increase the accuracy, precision, and recall rate. Using $43536$ positive samples and $20000$ negative samples, we obtain a precision rate range from $92.96\%$ to $98.26\%$ and a recall rate range from $88.72\%$ to $96.56\%$. It is reasonable to consider that if we collect more training data or multiply more images with existing data, we will be able to get better performance. But that will also leads to more expensive training and testing cost. 
+
+\begin{figure}[htb]
+\begin{subfigure}
+    \centering
+    \includegraphics[width=.9\linewidth]{toosmall1.eps}
+    \label{fig:toosmall1}
+\end{subfigure}
+\begin{subfigure}
+    \centering
+    \includegraphics[width=.9\linewidth]{toosmall2.eps}
+    \label{fig:toosmall2}
+\end{subfigure}
+\caption{Red bounding box is output result of the classifier, and the green bounding box is the ground truth. Top: Found the two big cars on the right, but lost other two small cars in the middle. Bottom: Found the cyclist on the left, but lost the small car in the middle.
+\label{fig:toosmall}}
+\end{figure}
+
+However, it doesn't perform well on the real test set, especially when the cars are small enough. We can observe from Figure \ref{fig:toosmall} that the proposals are relatively big compared to the small cars. However, if we decrease the expected size of bounding box, we will miss the big car that close to the observer. 
 
 \subsection{CNN}
 
+TODO: some description of test
+
 \section{Conclusion}
 
+[old related work, maybe changed to future work :) ]
 
+[old]Besides KITTI, we would also use some other datasets to test our methods, especially on pedestrain detection, including Caltech Pedestrian Detection Benchmark[7] and Daimler Pedestrian Segmentation Benchmark Dataset[1].
+
+[old]Inspired by the ranking of different methods on the KITTI website, we would try to implement those with very good performence and without using other sensor data, for the reason that such methods are more accessible and have better potential to be implemented even on mobile devices. We would try to improve the training model based on the findings of the state-of-the-art to come up with our own method, and evaluate the performance of it.We expect that our method can reach a high accuracy on the test set with an optimized speed. 
 
 \iffalse
 \begin{table}[htb]
