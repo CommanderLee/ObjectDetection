@@ -102,3 +102,67 @@ new_yticks = [char(a),pct];
 % 'Reflect the changes on the plot
 set(gca,'yticklabel',new_yticks);
 title('After multiplication');
+
+%% Test results
+clear all;
+close all;
+xLabel = {'Car', 'Pedestrian'};
+x = 1:2;
+% P, and R
+p1 = [8.82 1.56] / 100;
+r1 = [31.00 30.34] / 100;
+
+p2 = [11.71 1.78] / 100;
+r2 = [38.93 34.48] / 100;
+
+subplot(1, 2, 1);
+hold on;
+axis([1, 2, 0, 0.4]);
+
+plot(x, p1, 'b*--', 'LineWidth', 3);
+plot(x, r1, 'rx:', 'LineWidth', 3);
+
+legend('Precision', 'Recall', 'Location', 'east');
+
+strValuesP = strtrim(cellstr(num2str([p1(:) * 100],'%.2f')));
+text(x, p1, strValuesP, 'Color', 'blue', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+strValuesR = strtrim(cellstr(num2str([r1(:) * 100],'%.2f')));
+text(x, r1, strValuesR, 'Color', 'red', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+
+set(gca, 'xtick', 1:2, 'xticklabel', xLabel);
+% Ref: http://www.mathworks.com/matlabcentral/answers/94708-how-do-i-change-my-y-axis-or-x-axis-values-to-percentage-units-and-have-these-changes-reflected-on
+% Convert y-axis values to percentage values by multiplication
+a=[cellstr(num2str(get(gca,'ytick')'*100))]; 
+% Create a vector of '%' signs
+pct = char(ones(size(a,1),1)*'%'); 
+% Append the '%' signs after the percentage values
+new_yticks = [char(a),pct];
+% 'Reflect the changes on the plot
+set(gca,'yticklabel',new_yticks);
+title('Overlap threshold: Car 70%, Pedestrian 50%');
+
+subplot(1, 2, 2);
+hold on;
+axis([1, 2, 0, 0.4]);
+
+plot(x, p2, 'b*--', 'LineWidth', 3);
+plot(x, r2, 'rx:', 'LineWidth', 3);
+
+legend('Precision', 'Recall', 'Location', 'east');
+
+strValuesP = strtrim(cellstr(num2str([p2(:) * 100],'%.2f')));
+text(x, p2, strValuesP, 'Color', 'blue', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+strValuesR = strtrim(cellstr(num2str([r2(:) * 100],'%.2f')));
+text(x, r2, strValuesR, 'Color', 'red', 'FontSize', 12, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
+
+set(gca, 'xtick', 1:2, 'xticklabel', xLabel);
+% Ref: http://www.mathworks.com/matlabcentral/answers/94708-how-do-i-change-my-y-axis-or-x-axis-values-to-percentage-units-and-have-these-changes-reflected-on
+% Convert y-axis values to percentage values by multiplication
+a=[cellstr(num2str(get(gca,'ytick')'*100))]; 
+% Create a vector of '%' signs
+pct = char(ones(size(a,1),1)*'%'); 
+% Append the '%' signs after the percentage values
+new_yticks = [char(a),pct];
+% 'Reflect the changes on the plot
+set(gca,'yticklabel',new_yticks);
+title('Overlap threshold: Car 50%, Pedestrian 40%');
