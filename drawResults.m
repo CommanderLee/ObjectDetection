@@ -31,7 +31,7 @@ minObjHeight = 25;
 fprintf('Start drawing.\n');
 
 % for i=1:imageNum
-for i=40:50
+for i=262:280
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
@@ -46,6 +46,7 @@ for i=40:50
     findObjects = zeros(corrObjNum, 1);
     
     outRect = [];
+    foundRect = [];
     corrRect = [];
     
     % For each output objects
@@ -57,7 +58,7 @@ for i=40:50
                 if strcmp(corrObjects(iCorr).type, 'Car') || strcmp(corrObjects(iCorr).type, 'Van')
                     ratio = rectOverlap(outObjects(iOut).y1, outObjects(iOut).x1, outObjects(iOut).y2, outObjects(iOut).x2, ...
                         corrObjects(iCorr).y1, corrObjects(iCorr).x1, corrObjects(iCorr).y2, corrObjects(iCorr).x2);
-                    if ratio > carTh
+                    if ratio > carTh || (outObjects(iOut).y1 > corrObjects(iCorr).y1 && outObjects(iOut).x1 > corrObjects(iCorr).x1 && outObjects(iOut).y2 < corrObjects(iCorr).y2 && outObjects(iOut).x2 < corrObjects(iCorr).x2)
                         % Found a corresponding object.
                         findObjects(iCorr) = findObjects(iCorr) + 1;
                         found = true;
@@ -65,8 +66,13 @@ for i=40:50
                 end
             end
             % Draw a car:
-            outRect = [outRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
+            if found
+                foundRect = [foundRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
                 outObjects(iOut).x2-outObjects(iOut).x1, outObjects(iOut).y2-outObjects(iOut).y1];
+            else
+                outRect = [outRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
+                    outObjects(iOut).x2-outObjects(iOut).x1, outObjects(iOut).y2-outObjects(iOut).y1];
+            end
         elseif strcmp(outObjects(iOut).type, 'Pedestrian') %&& abs(outObjects(iOut).score) > 1
             found = false;
             % Check each correct pedestrians and sitting persons
@@ -74,7 +80,7 @@ for i=40:50
                 if strcmp(corrObjects(iCorr).type, 'Pedestrian') || strcmp(corrObjects(iCorr).type, 'Person_sitting')
                     ratio = rectOverlap(outObjects(iOut).y1, outObjects(iOut).x1, outObjects(iOut).y2, outObjects(iOut).x2, ...
                         corrObjects(iCorr).y1, corrObjects(iCorr).x1, corrObjects(iCorr).y2, corrObjects(iCorr).x2);
-                    if ratio > pedTh
+                    if ratio > pedTh || (outObjects(iOut).y1 > corrObjects(iCorr).y1 && outObjects(iOut).x1 > corrObjects(iCorr).x1 && outObjects(iOut).y2 < corrObjects(iCorr).y2 && outObjects(iOut).x2 < corrObjects(iCorr).x2)
                         % Found a corresponding object.
                         findObjects(iCorr) = findObjects(iCorr) + 1;
                         found = true;
@@ -82,8 +88,13 @@ for i=40:50
                 end
             end
             % Draw a pedestrian:
-            outRect = [outRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
+            if found
+                foundRect = [foundRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
                 outObjects(iOut).x2-outObjects(iOut).x1, outObjects(iOut).y2-outObjects(iOut).y1];
+            else
+                outRect = [outRect; outObjects(iOut).x1, outObjects(iOut).y1, ...
+                    outObjects(iOut).x2-outObjects(iOut).x1, outObjects(iOut).y2-outObjects(iOut).y1];
+            end
         end
     end
     
@@ -102,16 +113,27 @@ for i=40:50
         end
     end
     
+    shapeInserter1 = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([0 255 0]), 'LineWidth', 6);
+    shapeInserter2 = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([255 0 0]), 'LineWidth', 2);
+    shapeInserter3 = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([0 0 255]), 'LineWidth', 4);
+    
     if size(corrRect, 1) > 0
-        shapeInserter = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([0 255 0]), 'LineWidth', 4);
-        J = step(shapeInserter, im, int32(corrRect));
+        J = step(shapeInserter1, im, int32(corrRect));
         if size(outRect, 1) > 0
-            shapeInserter2 = vision.ShapeInserter('Shape','Rectangles','BorderColor','Custom', 'CustomBorderColor', uint8([255 0 0]), 'LineWidth', 2);
             K = step(shapeInserter2, J, int32(outRect));
-            currFig = imshow(K);
+            if size(foundRect, 1) > 0
+                L = step(shapeInserter3, K, int32(foundRect));
+                currFig = imshow(L);
+            else
+                currFig = imshow(K);
+            end
+        elseif size(foundRect, 1) > 0
+            L = step(shapeInserter3, K, int32(foundRect));
+            currFig = imshow(L);
         else
             currFig = imshow(J);
         end
+        title(num2str(i-1));
         waitfor(currFig);
     end
 end

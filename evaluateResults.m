@@ -41,7 +41,7 @@ pedFP = 0;
 pedFN = 0;
 
 % for i=1:imageNum
-for i=44:50
+for i=51:280
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
@@ -56,14 +56,14 @@ for i=44:50
     
     % For each output objects
     for iOut = 1:outObjNum
-        if strcmp(outObjects(iOut).type, 'Car') %&& outObjects(iOut).score > 0.5 && outObjects(iOut).x2-outObjects(iOut).x1 > minCarWidth
+        if strcmp(outObjects(iOut).type, 'Car') %&& outObjects(iOut).score < 2 %&& outObjects(iOut).x2-outObjects(iOut).x1 > minCarWidth
             found = false;
             % Check each correct cars and vans
             for iCorr = 1:corrObjNum
-                if strcmp(corrObjects(iCorr).type, 'Car') || strcmp(corrObjects(iCorr).type, 'Van')
+                if strcmp(corrObjects(iCorr).type, 'Car') || strcmp(corrObjects(iCorr).type, 'Van') || strcmp(corrObjects(iCorr).type, 'Truck')
                     ratio = rectOverlap(outObjects(iOut).y1, outObjects(iOut).x1, outObjects(iOut).y2, outObjects(iOut).x2, ...
                         corrObjects(iCorr).y1, corrObjects(iCorr).x1, corrObjects(iCorr).y2, corrObjects(iCorr).x2);
-                    if ratio > carTh
+                    if ratio > carTh || (outObjects(iOut).y1 > corrObjects(iCorr).y1 && outObjects(iOut).x1 > corrObjects(iCorr).x1 && outObjects(iOut).y2 < corrObjects(iCorr).y2 && outObjects(iOut).x2 < corrObjects(iCorr).x2)
                         % Found a corresponding object.
                         findObjects(iCorr) = findObjects(iCorr) + 1;
                         found = true;
@@ -74,14 +74,14 @@ for i=44:50
                 % Claim a 'car' but actually not.
                 carFP = carFP + 1;
             end
-        elseif strcmp(outObjects(iOut).type, 'Pedestrian') %&& outObjects(iOut).score > 0.5
+        elseif strcmp(outObjects(iOut).type, 'Pedestrian') %&& outObjects(iOut).score < 4
             found = false;
             % Check each correct pedestrians and sitting persons
             for iCorr = 1:corrObjNum
                 if strcmp(corrObjects(iCorr).type, 'Pedestrian') || strcmp(corrObjects(iCorr).type, 'Person_sitting')
                     ratio = rectOverlap(outObjects(iOut).y1, outObjects(iOut).x1, outObjects(iOut).y2, outObjects(iOut).x2, ...
                         corrObjects(iCorr).y1, corrObjects(iCorr).x1, corrObjects(iCorr).y2, corrObjects(iCorr).x2);
-                    if ratio > pedTh
+                    if ratio > pedTh || (outObjects(iOut).y1 > corrObjects(iCorr).y1 && outObjects(iOut).x1 > corrObjects(iCorr).x1 && outObjects(iOut).y2 < corrObjects(iCorr).y2 && outObjects(iOut).x2 < corrObjects(iCorr).x2)
                         % Found a corresponding object.
                         findObjects(iCorr) = findObjects(iCorr) + 1;
                         found = true;
