@@ -76,9 +76,9 @@ simFunctionHandles = simFunctionHandles(1:2); % Two different merging strategies
 
 % Thresholds for the Felzenszwalb and Huttenlocher segmentation algorithm.
 % Note that by default, we set minSize = k, and sigma = 0.8.
-k = 100; % controls size of segments of initial segmentation. 
+k = 120; % controls size of segments of initial segmentation. 
 minSize = 30;
-sigma = 0.7;
+sigma = 0.8;
 
 % Minium bounding box height that we consider. 
 % Ref: Readme file from development kit
@@ -103,7 +103,7 @@ fprintf('Start testing.\n');
 
 % parpool('local',2)
 % for i=1:imageNum
-for i=42:42
+for i=282:300
     im = imread(sprintf('%s/%06d.png', imageDir, i-1));
 
     % Perform Selective Search

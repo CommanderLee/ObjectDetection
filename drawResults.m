@@ -31,7 +31,7 @@ minObjHeight = 25;
 fprintf('Start drawing.\n');
 
 % for i=1:imageNum
-for i=262:280
+for i=80:150
     if mod(i,100) == 0
         fprintf('%d\n', i);
     end
